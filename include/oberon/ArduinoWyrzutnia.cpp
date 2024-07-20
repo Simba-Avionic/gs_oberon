@@ -118,13 +118,13 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         tensoL.raw_value = tenso_1;
         tensoR.raw_value = tenso_2;
 
-        tensoL.raw_kg = tensoL.raw_value * tensoL.scale;
-        tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale;
-        tensoL.fuel_kg = (tensoL.raw_value - tensoL.empty_rocket_point) * tensoL.scale;
+        tensoL.raw_kg = tensoL.raw_value * tensoL.scale / 1000.0;
+        tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale / 1000.0;
+        tensoL.fuel_kg = (tensoL.raw_value - tensoL.empty_rocket_point) * tensoL.scale / 1000.0;
 
-        tensoR.raw_kg = tensoR.raw_value * tensoR.scale;
-        tensoR.rocket_kg = (tensoR.raw_value - tensoR.rocket_point) * tensoR.scale;
-        tensoR.fuel_kg = (tensoR.raw_value - tensoR.empty_rocket_point) * tensoR.scale;
+        tensoR.raw_kg = tensoR.raw_value * tensoR.scale / 1000.0;
+        tensoR.rocket_kg = (tensoR.raw_value - tensoR.rocket_point) * tensoR.scale / 1000.0;
+        tensoR.fuel_kg = (tensoR.raw_value - tensoR.empty_rocket_point) * tensoR.scale / 1000.0;
         
         if (newTensoCallback)
             newTensoCallback();
