@@ -1,7 +1,9 @@
 #include "ArduinoWyrzutnia.hpp"
 
-ArduinoWyrzutnia::ArduinoWyrzutnia(std::string serialPort) : serialPort(serialPort)
+ArduinoWyrzutnia::ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort)
+    : serialPort(serialPort), newTensoCallback(newTensoCallback), newSensorsCallback(newSensorsCallback)
 {
+    tensoL.rocket_point = 569;
     openSerialPort();
     readT = std::thread(&ArduinoWyrzutnia::readingLoop, this);
 }
@@ -115,13 +117,36 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         int32_t tenso_2 = (conv_ramka[5] << 24) | (conv_ramka[6] << 16) | (conv_ramka[7] << 8) | conv_ramka[8];
         tensoL.raw_value = tenso_1;
         tensoR.raw_value = tenso_2;
-        // printf("Tenso 1: %d  Tenso 2: %d  Srednia 1: %lld  Srednia 2: %lld  S1_kg: %f  S2_kg: %f\n", tenso_1, tenso_2, s1, s2, 1.078*(s1-offset_1_t1)/1000, 1.098*(s2-offset_1_t2)/1000);
-        printf("TensoL.raw_value: %d  TensoR.raw_value: %d\n", tensoL.raw_value, tensoR.raw_value);
-    }
-    for (auto& b : conv_ramka)
-    {
-        printf("%02X ", b);
-    }
-    printf("\n");
 
+        tensoL.raw_kg = tensoL.raw_value * tensoL.scale;
+        tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale;
+        tensoL.fuel_kg = (tensoL.raw_value - tensoL.empty_rocket_point) * tensoL.scale;
+
+        tensoR.raw_kg = tensoR.raw_value * tensoR.scale;
+        tensoR.rocket_kg = (tensoR.raw_value - tensoR.rocket_point) * tensoR.scale;
+        tensoR.fuel_kg = (tensoR.raw_value - tensoR.empty_rocket_point) * tensoR.scale;
+        
+        if (newTensoCallback)
+            newTensoCallback();
+    }
+    // else if (typ_ramki == RAMKA_TENSO_SENSORS)
+    // {
+        
+    // }
+    // for (auto& b : conv_ramka)
+    // {
+    //     printf("%02X ", b);
+    // }
+    // printf("\n");
+
+}
+
+const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoL()
+{
+    return tensoL;
+}
+
+const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoR()
+{
+    return tensoR;
 }

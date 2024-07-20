@@ -21,15 +21,24 @@
 class ArduinoWyrzutnia
 {
 public:
-    ArduinoWyrzutnia(std::string serialPort = "/dev/ttyS0");
-    ~ArduinoWyrzutnia();
-private:
     struct tenso
     {
         int32_t raw_value = 0;
-        int32_t zero_point = 0;
+        int32_t rocket_point = 0;
         int32_t empty_rocket_point = 0;
-    } tensoL, tensoR;
+        double scale = 1.0;
+        float raw_kg = 0.0;
+        float rocket_kg = 0.0;
+        float fuel_kg = 0.0;
+    };
+
+    ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
+    ~ArduinoWyrzutnia();
+
+    const tenso getTensoL();
+    const tenso getTensoR();
+private:
+    tenso tensoL, tensoR;
     std::thread readT;
     void readingLoop();
     std::string serialPort;
