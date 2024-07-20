@@ -1,14 +1,7 @@
 #include "ArduinoWyrzutnia.hpp"
 
-ArduinoWyrzutnia::ArduinoWyrzutnia()
+ArduinoWyrzutnia::ArduinoWyrzutnia(std::string serialPort) : serialPort(serialPort)
 {
-    srednia_100_t_1.reserve(100);
-    srednia_100_t_2.reserve(100);
-    for(int i=0; i<100; i++)
-    {
-        srednia_100_t_1.push_back(0);
-        srednia_100_t_2.push_back(0);
-    }
     openSerialPort();
     readT = std::thread(&ArduinoWyrzutnia::readingLoop, this);
 }
@@ -20,9 +13,9 @@ ArduinoWyrzutnia::~ArduinoWyrzutnia()
 
 void ArduinoWyrzutnia::openSerialPort()
 {
-    serial_port = open("/dev/ttyS0", O_RDWR);
+    serialPortFD = open(serialPort.c_str(), O_RDWR);
     struct termios tty;
-    if (tcgetattr(serial_port, &tty) != 0)
+    if (tcgetattr(serialPortFD, &tty) != 0)
     {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
         exit(1);
@@ -54,10 +47,12 @@ void ArduinoWyrzutnia::openSerialPort()
     cfsetospeed(&tty, B9600);
 
     // Save tty settings, also checking for error
-    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+    if (tcsetattr(serialPortFD, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         exit(1);
+        // todo: throw exception / reconnect
     }
+    printf("Serial port opened: %s\n", serialPort.c_str());
 }
 
 void ArduinoWyrzutnia::readingLoop()
@@ -66,7 +61,7 @@ void ArduinoWyrzutnia::readingLoop()
     unsigned int ramka_size = 0;       // obecna ilosc bajtow w buforze ramki
     while (true)
     {
-        int n = read(serial_port, &read_buff, sizeof(read_buff));
+        int n = read(serialPortFD, &read_buff, sizeof(read_buff));
         for (int i=0; i<n; i++)
         {
             unsigned char b = read_buff[i];
@@ -93,7 +88,7 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         if (b == RAMKA_SPECIAL)
         {
             i++;
-            ramka[i] += R_SPECIAL_DIF;
+            ramka[i] += RAMKA_SPECIAL_DIF;
             conv_ramka[conv_idx++] = ramka[i];
         }
         else
@@ -118,24 +113,15 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
     {
         int32_t tenso_1 = (conv_ramka[1] << 24) | (conv_ramka[2] << 16) | (conv_ramka[3] << 8) | conv_ramka[4];
         int32_t tenso_2 = (conv_ramka[5] << 24) | (conv_ramka[6] << 16) | (conv_ramka[7] << 8) | conv_ramka[8];
-        srednia_100_t_1[srednia_idx] = tenso_1;
-        srednia_100_t_2[srednia_idx] = tenso_2;
-        srednia_idx++;
-        srednia_idx %= 100;
-        long long int s1 = 0, s2 = 0;
-        for (int i=0; i<100; i++)
-        {
-            s1 += srednia_100_t_1[i];
-            s2 += srednia_100_t_2[i];
-        }
-        s1 /= 100;
-        s2 /= 100;
-        printf("Tenso 1: %d  Tenso 2: %d  Srednia 1: %lld  Srednia 2: %lld  S1_kg: %f  S2_kg: %f\n", tenso_1, tenso_2, s1, s2, 1.078*(s1-offset_1_t1)/1000, 1.098*(s2-offset_1_t2)/1000);
+        tensoL.raw_value = tenso_1;
+        tensoR.raw_value = tenso_2;
+        // printf("Tenso 1: %d  Tenso 2: %d  Srednia 1: %lld  Srednia 2: %lld  S1_kg: %f  S2_kg: %f\n", tenso_1, tenso_2, s1, s2, 1.078*(s1-offset_1_t1)/1000, 1.098*(s2-offset_1_t2)/1000);
+        printf("TensoL.raw_value: %d  TensoR.raw_value: %d\n", tensoL.raw_value, tensoR.raw_value);
     }
-    // for (unsigned int i=0; i<conv_idx; i++)
-    // {
-    //     printf("%02X ", conv_buf[i]);
-    // }
-    // printf("\n");
+    for (auto& b : conv_ramka)
+    {
+        printf("%02X ", b);
+    }
+    printf("\n");
 
 }

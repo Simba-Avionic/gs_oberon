@@ -3,10 +3,9 @@
 Oberon::Oberon()
     : Node("oberon")
 {
-    arduinoWyrzutnia = new ArduinoWyrzutnia();
+    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>();
 }
 
 Oberon::~Oberon()
 {
-    delete arduinoWyrzutnia;
 }

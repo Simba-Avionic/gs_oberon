@@ -9,31 +9,35 @@
 #include <stdio.h>
 #include <thread>
 #include <vector>
+#include <functional>
 
-#define R_META_SIZE   4
-#define RAMKA_START   0xCC    // 11001100   204(10) S: 172(10)
-#define RAMKA_STOP    0x33    // 00110011   51(10)  S: 19(10)
-#define RAMKA_SPECIAL 0xF0    // 11110000   240(10) S: 208(10)
-#define R_SPECIAL_DIF 0x20    // 00100000   32(10)
-#define RAMKA_TENSO   0x01
+#define RAMKA_META_SIZE     4
+#define RAMKA_START         0xCC    // 11001100   204(10) S: 172(10)
+#define RAMKA_STOP          0x33    // 00110011   51(10)  S: 19(10)
+#define RAMKA_SPECIAL       0xF0    // 11110000   240(10) S: 208(10)
+#define RAMKA_SPECIAL_DIF   0x20    // 00100000   32(10)
+#define RAMKA_TENSO         0x01
 
 class ArduinoWyrzutnia
 {
 public:
-    ArduinoWyrzutnia();
+    ArduinoWyrzutnia(std::string serialPort = "/dev/ttyS0");
     ~ArduinoWyrzutnia();
 private:
-    int32_t offset_1_t1 = 809;
-    int32_t offset_2_t1 = 0;
-    int32_t offset_1_t2 = 597;
-    int32_t offset_2_t2 = 0;
-    std::vector<int32_t> srednia_100_t_1;
-    std::vector<int32_t> srednia_100_t_2;
-    unsigned int srednia_idx = 0;
+    struct tenso
+    {
+        int32_t raw_value = 0;
+        int32_t zero_point = 0;
+        int32_t empty_rocket_point = 0;
+    } tensoL, tensoR;
     std::thread readT;
     void readingLoop();
-    int serial_port;
+    std::string serialPort;
+    int serialPortFD;
     void openSerialPort();
-    unsigned char read_buff[128];
+    unsigned char read_buff[256];
     void decodeRamka(unsigned char* ramka, unsigned int size);
+
+    std::function<void()> newTensoCallback;
+    std::function<void()> newSensorsCallback;
 };
