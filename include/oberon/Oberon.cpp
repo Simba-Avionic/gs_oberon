@@ -5,6 +5,8 @@ Oberon::Oberon()
 {
     loadCellsPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("/oberon/launch_tower/tenso", 10);
     arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaSensorsCallback, this), "/dev/ttyS0");
+    wyrzutniaUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 10);
+    wyrzutniaUartStatsTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::publishhWyrzutniaUartStats, this));
 }
 
 Oberon::~Oberon()
@@ -42,4 +44,15 @@ void Oberon::arduinoWyrzutniaTensoCallback()
 void Oberon::arduinoWyrzutniaSensorsCallback()
 {
 
+}
+
+void Oberon::publishhWyrzutniaUartStats()
+{
+    gs_interfaces::msg::UartStatistics msg;
+    auto stats = arduinoWyrzutnia->getUartStats();
+    msg.total_messages_received = stats.totalMessagesReceived;
+    msg.good_messages_received = stats.goodMessagesReceived;
+    msg.total_bytes_received = stats.totalBytesReceived;
+    msg.total_bytes_sent = stats.totalBytesSent;
+    wyrzutniaUartStatsPub->publish(msg);
 }

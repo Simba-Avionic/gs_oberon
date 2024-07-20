@@ -64,6 +64,13 @@ void ArduinoWyrzutnia::readingLoop()
     while (true)
     {
         int n = read(serialPortFD, &read_buff, sizeof(read_buff));
+        if (n < 0)
+        {
+            printf("Error %i from read: %s\n", errno, strerror(errno));
+            exit(1);
+        }
+        uartStats.totalBytesReceived += n;
+        uartStats.totalMessagesReceived++;
         for (int i=0; i<n; i++)
         {
             unsigned char b = read_buff[i];
@@ -109,6 +116,7 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         // printf("Checksum error\n");
         return;
     }
+    uartStats.goodMessagesReceived++;
 
     unsigned char typ_ramki = conv_ramka[0];
     if (typ_ramki == RAMKA_TENSO)
@@ -149,4 +157,9 @@ const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoL()
 const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoR()
 {
     return tensoR;
+}
+
+const ArduinoWyrzutnia::uartStatistics ArduinoWyrzutnia::getUartStats()
+{
+    return uartStats;
 }

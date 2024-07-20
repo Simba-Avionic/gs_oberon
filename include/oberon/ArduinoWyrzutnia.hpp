@@ -31,12 +31,20 @@ public:
         float rocket_kg = 0.0;
         float fuel_kg = 0.0;
     };
+    struct uartStatistics
+    {
+        unsigned long long totalMessagesReceived = 0;
+        unsigned long long goodMessagesReceived = 0;
+        unsigned long long totalBytesReceived = 0;
+        unsigned long long totalBytesSent = 0;
+    };
 
     ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
     ~ArduinoWyrzutnia();
 
     const tenso getTensoL();
     const tenso getTensoR();
+    const uartStatistics getUartStats();
 private:
     tenso tensoL, tensoR;
     std::thread readT;
@@ -49,4 +57,6 @@ private:
 
     std::function<void()> newTensoCallback;
     std::function<void()> newSensorsCallback;
+
+    uartStatistics uartStats;
 };
