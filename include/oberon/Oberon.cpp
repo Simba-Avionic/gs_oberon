@@ -3,7 +3,7 @@
 Oberon::Oberon()
     : Node("oberon")
 {
-    loadCellsPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("load_cells", 10);
+    loadCellsPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("/oberon/launch_tower/tenso", 10);
     arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaSensorsCallback, this), "/dev/ttyS0");
 }
 
