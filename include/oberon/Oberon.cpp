@@ -48,11 +48,17 @@ void Oberon::arduinoWyrzutniaSensorsCallback()
 
 void Oberon::publishhWyrzutniaUartStats()
 {
+    arduinoWyrzutnia->secondPassedUpdateStats();
     gs_interfaces::msg::UartStatistics msg;
     auto stats = arduinoWyrzutnia->getUartStats();
     msg.total_messages_received = stats.totalMessagesReceived;
+    msg.total_messages_sent = stats.totalMessagesSent;
     msg.good_messages_received = stats.goodMessagesReceived;
     msg.total_bytes_received = stats.totalBytesReceived;
     msg.total_bytes_sent = stats.totalBytesSent;
+    msg.messages_received_per_second = stats.messagesRecLastSec;
+    msg.messages_sent_per_second = stats.messagesSentLastSec;
+    msg.bytes_received_per_second = stats.bytesRecLastSec;
+    msg.bytes_sent_per_second = stats.bytesSentLastSec;
     wyrzutniaUartStatsPub->publish(msg);
 }

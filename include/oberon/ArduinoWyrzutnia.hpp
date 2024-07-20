@@ -33,18 +33,44 @@ public:
     };
     struct uartStatistics
     {
+        unsigned long long totalMessagesSent = 0;
         unsigned long long totalMessagesReceived = 0;
         unsigned long long goodMessagesReceived = 0;
         unsigned long long totalBytesReceived = 0;
         unsigned long long totalBytesSent = 0;
+        unsigned int messagesRecLastSec = 0;
+        unsigned int messagesSentLastSec = 0;
+        unsigned int bytesRecLastSec = 0;
+        unsigned int bytesSentLastSec = 0;
+    private:
+        unsigned long long lastSecTotalMessagesSent = 0;
+        unsigned long long lastSecTotalMessagesReceived = 0;
+        unsigned long long lastSecGoodMessagesReceived = 0;
+        unsigned long long lastSecTotalBytesReceived = 0;
+        unsigned long long lastSecTotalBytesSent = 0;
+        void secondPassed()
+        {
+            messagesRecLastSec = totalMessagesReceived - lastSecTotalMessagesReceived;
+            messagesSentLastSec = totalMessagesSent - lastSecTotalMessagesSent;
+            bytesRecLastSec = totalBytesReceived - lastSecTotalBytesReceived;
+            bytesSentLastSec = totalBytesSent - lastSecTotalBytesSent;
+            lastSecTotalMessagesSent = totalMessagesSent;
+            lastSecTotalMessagesReceived = totalMessagesReceived;
+            lastSecGoodMessagesReceived = goodMessagesReceived;
+            lastSecTotalBytesReceived = totalBytesReceived;
+            lastSecTotalBytesSent = totalBytesSent;
+        }
+        friend class ArduinoWyrzutnia;
     };
 
     ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
     ~ArduinoWyrzutnia();
 
-    const tenso getTensoL();
-    const tenso getTensoR();
-    const uartStatistics getUartStats();
+    const tenso& getTensoL();
+    const tenso& getTensoR();
+    const uartStatistics& getUartStats();
+
+    void secondPassedUpdateStats();
 private:
     tenso tensoL, tensoR;
     std::thread readT;

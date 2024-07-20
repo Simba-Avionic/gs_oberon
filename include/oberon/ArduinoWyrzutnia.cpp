@@ -149,17 +149,22 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
 
 }
 
-const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoL()
+const ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
 {
     return tensoL;
 }
 
-const ArduinoWyrzutnia::tenso ArduinoWyrzutnia::getTensoR()
+const ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoR()
 {
     return tensoR;
 }
 
-const ArduinoWyrzutnia::uartStatistics ArduinoWyrzutnia::getUartStats()
+const ArduinoWyrzutnia::uartStatistics& ArduinoWyrzutnia::getUartStats()
 {
     return uartStats;
+}
+
+void ArduinoWyrzutnia::secondPassedUpdateStats()
+{
+    uartStats.secondPassed();
 }
