@@ -70,7 +70,6 @@ void ArduinoWyrzutnia::readingLoop()
             exit(1);
         }
         uartStats.totalBytesReceived += n;
-        uartStats.totalMessagesReceived++;
         for (int i=0; i<n; i++)
         {
             unsigned char b = read_buff[i];
@@ -88,6 +87,7 @@ void ArduinoWyrzutnia::readingLoop()
 
 void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
 {
+    uartStats.totalMessagesReceived++;
     // remove special values
     unsigned char conv_ramka[128];
     unsigned int conv_idx = 0;
