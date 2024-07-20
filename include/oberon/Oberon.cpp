@@ -18,14 +18,14 @@ void Oberon::arduinoWyrzutniaTensoCallback()
     auto tL = arduinoWyrzutnia->getTensoL();
     auto tR = arduinoWyrzutnia->getTensoR();
 
-    msg.tenso_l.raw_val = tL.raw_kg;
+    msg.tenso_l.raw_val = tL.raw_value;
     msg.tenso_l.vehicle_point = tL.rocket_point;
     msg.tenso_l.fuel_point = tL.empty_rocket_point;
     msg.tenso_l.raw_kg = tL.raw_kg;
     msg.tenso_l.vehicle_kg = tL.rocket_kg;
     msg.tenso_l.fuel_kg = tL.fuel_kg;
 
-    msg.tenso_r.raw_val = tR.raw_kg;
+    msg.tenso_r.raw_val = tR.raw_value;
     msg.tenso_r.vehicle_point = tR.rocket_point;
     msg.tenso_r.fuel_point = tR.empty_rocket_point;
     msg.tenso_r.raw_kg = tR.raw_kg;
