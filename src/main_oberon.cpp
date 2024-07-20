@@ -2,9 +2,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-// #include "nau7802/NAU7802.h"
-
-#include "Tankowacz.hpp"
+#include "Obernon.hpp"
 
 void signalHandler(int signum)
 {
@@ -20,7 +18,7 @@ int main(int argc, char ** argv)
 {
   signal(SIGINT, signalHandler);
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Tankowacz>());
+  rclcpp::spin(std::make_shared<Oberon>());
   rclcpp::shutdown();
   return 0;
 }

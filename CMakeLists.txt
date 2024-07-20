@@ -12,17 +12,13 @@ find_package(gs_interfaces REQUIRED)
 include_directories(include/oberon)
 
 set(SOURCES
-  src/oberon.cpp
-  include/oberon/nau7802/NAU7802.cpp
-  include/oberon/Tankowacz.cpp
-  include/oberon/Tenso.cpp
+  src/main_oberon.cpp
+  include/oberon/Oberon.cpp
+  include/oberon/ArduinoWyrzutnia.cpp
 )
 
 add_executable(oberon ${SOURCES})
 ament_target_dependencies(oberon rclcpp gs_interfaces)
-target_link_libraries(oberon
-  i2c
-)
 
 install(TARGETS oberon
   DESTINATION lib/${PROJECT_NAME})
