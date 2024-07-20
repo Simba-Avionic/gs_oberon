@@ -38,10 +38,12 @@ public:
         unsigned long long goodMessagesReceived = 0;
         unsigned long long totalBytesReceived = 0;
         unsigned long long totalBytesSent = 0;
+        unsigned int goodMessagesReceivedLastSec = 0;
         unsigned int messagesRecLastSec = 0;
         unsigned int messagesSentLastSec = 0;
         unsigned int bytesRecLastSec = 0;
         unsigned int bytesSentLastSec = 0;
+        float goodMessagesReceivedPerSecRatio = 0.0;
     private:
         unsigned long long lastSecTotalMessagesSent = 0;
         unsigned long long lastSecTotalMessagesReceived = 0;
@@ -50,6 +52,7 @@ public:
         unsigned long long lastSecTotalBytesSent = 0;
         void secondPassed()
         {
+            goodMessagesReceivedLastSec = goodMessagesReceived - lastSecGoodMessagesReceived;
             messagesRecLastSec = totalMessagesReceived - lastSecTotalMessagesReceived;
             messagesSentLastSec = totalMessagesSent - lastSecTotalMessagesSent;
             bytesRecLastSec = totalBytesReceived - lastSecTotalBytesReceived;
@@ -59,6 +62,7 @@ public:
             lastSecGoodMessagesReceived = goodMessagesReceived;
             lastSecTotalBytesReceived = totalBytesReceived;
             lastSecTotalBytesSent = totalBytesSent;
+            goodMessagesReceivedPerSecRatio = (float)goodMessagesReceivedLastSec / (float)messagesRecLastSec;
         }
         friend class ArduinoWyrzutnia;
     };

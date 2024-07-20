@@ -60,5 +60,7 @@ void Oberon::publishhWyrzutniaUartStats()
     msg.messages_sent_per_second = stats.messagesSentLastSec;
     msg.bytes_received_per_second = stats.bytesRecLastSec;
     msg.bytes_sent_per_second = stats.bytesSentLastSec;
+    msg.good_messages_received_per_second = stats.goodMessagesReceivedLastSec;
+    msg.good_messages_ratio_received_per_second = stats.goodMessagesReceivedPerSecRatio;
     wyrzutniaUartStatsPub->publish(msg);
 }
