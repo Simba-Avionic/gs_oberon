@@ -23,13 +23,25 @@ class ArduinoWyrzutnia
 public:
     struct tenso
     {
-        int32_t raw_value = 0;
-        int32_t rocket_point = 0;
-        int32_t empty_rocket_point = 0;
+        int32_t last_values[30] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0};   // 30 ostatnich wartosci do sredniej dla tarowania
+        int32_t last_values_idx = 0;
+        int32_t raw_value = 0;                  // bez tarowania
+        int32_t rocket_point = 0;               // tarujemy i kladziemy rakiete
+        int32_t empty_rocket_point = 0;         // tarujemy i tankujemy paliwo
         double scale = 1.0;
         float raw_kg = 0.0;
         float rocket_kg = 0.0;
         float fuel_kg = 0.0;
+
+        int32_t getAvgValue30()
+        {
+            int32_t sum = 0;
+            for (int i=0; i<30; i++)
+                sum += last_values[i];
+            return sum / 30;
+        }
     };
     struct uartStatistics
     {
@@ -70,9 +82,14 @@ public:
     ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
     ~ArduinoWyrzutnia();
 
-    const tenso& getTensoL();
-    const tenso& getTensoR();
+    tenso& getTensoL();
+    tenso& getTensoR();
     const uartStatistics& getUartStats();
+
+    void tareRocketPoint();
+    void tareEmptyRocketPoint();
+    void setScaleLeft(double scale);
+    void setScaleRight(double scale);
 
     void secondPassedUpdateStats();
 private:

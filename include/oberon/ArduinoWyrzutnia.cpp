@@ -87,6 +87,8 @@ void ArduinoWyrzutnia::readingLoop()
 
 void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
 {
+    if (size < 3)
+        return;
     uartStats.totalMessagesReceived++;
     // remove special values
     unsigned char conv_ramka[128];
@@ -124,7 +126,9 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         int32_t tenso_1 = (conv_ramka[1] << 24) | (conv_ramka[2] << 16) | (conv_ramka[3] << 8) | conv_ramka[4];
         int32_t tenso_2 = (conv_ramka[5] << 24) | (conv_ramka[6] << 16) | (conv_ramka[7] << 8) | conv_ramka[8];
         tensoL.raw_value = tenso_1;
+        tensoL.last_values[(tensoL.last_values_idx++) % 30] = tenso_1; 
         tensoR.raw_value = tenso_2;
+        tensoR.last_values[(tensoR.last_values_idx++) % 30] = tenso_2;
 
         tensoL.raw_kg = tensoL.raw_value * tensoL.scale / 1000.0;
         tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale / 1000.0;
@@ -149,12 +153,12 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
 
 }
 
-const ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
+ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
 {
     return tensoL;
 }
 
-const ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoR()
+ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoR()
 {
     return tensoR;
 }
@@ -167,4 +171,26 @@ const ArduinoWyrzutnia::uartStatistics& ArduinoWyrzutnia::getUartStats()
 void ArduinoWyrzutnia::secondPassedUpdateStats()
 {
     uartStats.secondPassed();
+}
+
+void ArduinoWyrzutnia::tareRocketPoint()
+{
+    tensoL.rocket_point = tensoL.getAvgValue30();
+    tensoR.rocket_point = tensoR.getAvgValue30();
+}
+
+void ArduinoWyrzutnia::tareEmptyRocketPoint()
+{
+    tensoL.empty_rocket_point = tensoL.getAvgValue30();
+    tensoR.empty_rocket_point = tensoR.getAvgValue30();
+}
+
+void ArduinoWyrzutnia::setScaleLeft(double scale)
+{
+    tensoL.scale = scale;
+}
+
+void ArduinoWyrzutnia::setScaleRight(double scale)
+{
+    tensoR.scale = scale;
 }
