@@ -76,9 +76,8 @@ void loop()
     // ~17 ms
   }
   
-  
   bool got_data = false;
-  tcaselect(4);                                               // + delay(2)
+  tcaselect(4);
   if (!nau_connected && millis() > t1_reconnect_time + 1000)
   {
     t1_reconnect_time = millis();
@@ -88,7 +87,7 @@ void loop()
     tenso_1_val = nau.read();
     got_data = true;
   }
-  tcaselect(6);                                               // + delay(2)
+  tcaselect(6);
   if (!nau2_connected && millis() > t2_reconnect_time + 1000)
   {
     t2_reconnect_time = millis();
@@ -100,18 +99,18 @@ void loop()
   }
   if (got_data)
   {
-    // sendTenso(tenso_1_val, tenso_2_val);
+    sendTenso(tenso_1_val, tenso_2_val);
     // sendTensoText(tenso_1_val, tenso_2_val);
     digitalWrite(LED_BUILTIN, HIGH);
   }
   unsigned long duration = millis()-tic;
-  if (duration < 10)
-    delay(10 - duration);
+  if (duration < 100)
+    delay(100 - duration);
 
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-void putByteIntoRamka(unsigned char b, unsigned char* ramka, int& idx)
+void putByteIntoRamka(byte b, unsigned char* ramka, int& idx)
 {
   if (b == RAMKA_STOP || b == RAMKA_START || b == RAMKA_SPECIAL) {
     ramka[idx++] = RAMKA_SPECIAL;
@@ -179,11 +178,12 @@ void sendTemperature()
   ramka[0] = RAMKA_START;
   ramka[1] = RAMKA_TEMPERATURE;
   int idx = 2;
-  int32_t temperature_cast = reinterpret_cast<int32_t>(&temperature);
-  putByteIntoRamka((temperature_cast >> 24) & 0xFF, ramka, idx);    // 2
-  putByteIntoRamka((temperature_cast >> 16) & 0xFF, ramka, idx);    // 3
-  putByteIntoRamka((temperature_cast >> 8) & 0xFF, ramka, idx);    // 4
-  putByteIntoRamka(temperature_cast & 0xFF, ramka, idx);    // 5
+  byte temp_bytes[4];
+  memcpy(temp_bytes, &temperature, 4);
+  putByteIntoRamka(temp_bytes[0], ramka, idx);    // 2
+  putByteIntoRamka(temp_bytes[1], ramka, idx);    // 3
+  putByteIntoRamka(temp_bytes[2], ramka, idx);    // 4
+  putByteIntoRamka(temp_bytes[3], ramka, idx);    // 5
   
   unsigned char checksum = 0;
   for (int i = 1; i < idx; i++)
