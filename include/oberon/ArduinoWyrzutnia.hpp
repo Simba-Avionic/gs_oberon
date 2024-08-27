@@ -17,6 +17,7 @@
 #define RAMKA_SPECIAL       0xF0    // 11110000   240(10) S: 208(10)
 #define RAMKA_SPECIAL_DIF   0x20    // 00100000   32(10)
 #define RAMKA_TENSO         0x01
+#define RAMKA_TEMPERATURE   0x02
 
 class ArduinoWyrzutnia
 {
@@ -84,6 +85,7 @@ public:
 
     tenso& getTensoL();
     tenso& getTensoR();
+    const float& getTemperature();
     const uartStatistics& getUartStats();
 
     void tareRocketPoint();
@@ -94,6 +96,7 @@ public:
     void secondPassedUpdateStats();
 private:
     tenso tensoL, tensoR;
+    float temperature = 0.0;
     std::thread readT;
     void readingLoop();
     std::string serialPort;

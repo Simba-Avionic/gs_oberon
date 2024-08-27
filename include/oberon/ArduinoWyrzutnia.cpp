@@ -1,5 +1,7 @@
 #include "ArduinoWyrzutnia.hpp"
 
+#include <cstring>
+
 ArduinoWyrzutnia::ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort)
     : serialPort(serialPort), newTensoCallback(newTensoCallback), newSensorsCallback(newSensorsCallback)
 {
@@ -115,7 +117,6 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
 
     if (checksum != conv_ramka[conv_idx - 1])
     {
-        // printf("Checksum error\n");
         return;
     }
     uartStats.goodMessagesReceived++;
@@ -141,16 +142,13 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         if (newTensoCallback)
             newTensoCallback();
     }
-    // else if (typ_ramki == RAMKA_TENSO_SENSORS)
-    // {
-        
-    // }
-    // for (auto& b : conv_ramka)
-    // {
-    //     printf("%02X ", b);
-    // }
-    // printf("\n");
-
+    else if (typ_ramki == RAMKA_TEMPERATURE)
+    {
+        uint8_t temperature_buff[4] = {conv_ramka[1], conv_ramka[2], conv_ramka[3], conv_ramka[4]};
+        std::memcpy(&temperature, temperature_buff, 4);
+        if (newSensorsCallback)
+            newSensorsCallback();
+    }
 }
 
 ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
@@ -161,6 +159,11 @@ ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
 ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoR()
 {
     return tensoR;
+}
+
+const float& ArduinoWyrzutnia::getTemperature()
+{
+    return temperature;
 }
 
 const ArduinoWyrzutnia::uartStatistics& ArduinoWyrzutnia::getUartStats()

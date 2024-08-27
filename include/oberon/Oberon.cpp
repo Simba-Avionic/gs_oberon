@@ -4,9 +4,10 @@ Oberon::Oberon()
     : Node("oberon")
 {
     loadCellsLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("/oberon/launch_tower/tenso", 10);
+    temperatureLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/launch_tower/temperature", 3);
     loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Oberon::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
-    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaSensorsCallback, this), "/dev/ttyS0");
-    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaSensorsCallback, this), "/dev/ttyUSB0");
+    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS0");        // RPI - always /dev/ttyS0  
+    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyUSB0");   // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
     wyrzutniaUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 10);
     wyrzutniaUartStatsTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::publishWyrzutniaUartStats, this));
 
@@ -22,6 +23,7 @@ void Oberon::arduinoWyrzutniaTensoCallback()
 {
     gs_interfaces::msg::LoadCells msg;
     msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
     auto tL = arduinoWyrzutnia->getTensoL();
     auto tR = arduinoWyrzutnia->getTensoR();
 
@@ -46,15 +48,21 @@ void Oberon::arduinoWyrzutniaTensoCallback()
     loadCellsLaunchPadPublisher->publish(msg);
 }
 
-void Oberon::arduinoWyrzutniaSensorsCallback()
+void Oberon::arduinoWyrzutniaTemperatureCallback()
 {
-
+    gs_interfaces::msg::Temperature msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
+    msg.temperature = arduinoWyrzutnia->getTemperature();
+    temperatureLaunchPadPublisher->publish(msg);
 }
 
 void Oberon::publishWyrzutniaUartStats()
 {
     arduinoWyrzutnia->secondPassedUpdateStats();
     gs_interfaces::msg::UartStatistics msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
     auto stats = arduinoWyrzutnia->getUartStats();
     msg.total_messages_received = stats.totalMessagesReceived;
     msg.total_messages_sent = stats.totalMessagesSent;
