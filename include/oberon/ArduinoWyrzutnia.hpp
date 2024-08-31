@@ -9,31 +9,104 @@
 #include <stdio.h>
 #include <thread>
 #include <vector>
+#include <functional>
 
-#define R_META_SIZE   4
-#define RAMKA_START   0xCC    // 11001100   204(10) S: 172(10)
-#define RAMKA_STOP    0x33    // 00110011   51(10)  S: 19(10)
-#define RAMKA_SPECIAL 0xF0    // 11110000   240(10) S: 208(10)
-#define R_SPECIAL_DIF 0x20    // 00100000   32(10)
-#define RAMKA_TENSO   0x01
+#define RAMKA_META_SIZE     4
+#define RAMKA_START         0xCC    // 11001100   204(10) S: 172(10)
+#define RAMKA_STOP          0x33    // 00110011   51(10)  S: 19(10)
+#define RAMKA_SPECIAL       0xF0    // 11110000   240(10) S: 208(10)
+#define RAMKA_SPECIAL_DIF   0x20    // 00100000   32(10)
+#define RAMKA_TENSO         0x01
+#define RAMKA_TEMPERATURE   0x02
 
 class ArduinoWyrzutnia
 {
 public:
-    ArduinoWyrzutnia();
+    struct tenso
+    {
+        int32_t last_values[30] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0};   // 30 ostatnich wartosci do sredniej dla tarowania
+        int32_t last_values_idx = 0;
+        int32_t raw_value = 0;                  // bez tarowania
+        int32_t rocket_point = 0;               // tarujemy i kladziemy rakiete
+        int32_t empty_rocket_point = 0;         // tarujemy i tankujemy paliwo
+        double scale = 1.0;
+        float raw_kg = 0.0;
+        float rocket_kg = 0.0;
+        float fuel_kg = 0.0;
+
+        int32_t getAvgValue30()
+        {
+            int32_t sum = 0;
+            for (int i=0; i<30; i++)
+                sum += last_values[i];
+            return sum / 30;
+        }
+    };
+    struct uartStatistics
+    {
+        unsigned long long totalMessagesSent = 0;
+        unsigned long long totalMessagesReceived = 0;
+        unsigned long long goodMessagesReceived = 0;
+        unsigned long long totalBytesReceived = 0;
+        unsigned long long totalBytesSent = 0;
+        unsigned int goodMessagesReceivedLastSec = 0;
+        unsigned int messagesRecLastSec = 0;
+        unsigned int messagesSentLastSec = 0;
+        unsigned int bytesRecLastSec = 0;
+        unsigned int bytesSentLastSec = 0;
+        float goodMessagesReceivedPerSecRatio = 0.0;
+    private:
+        unsigned long long lastSecTotalMessagesSent = 0;
+        unsigned long long lastSecTotalMessagesReceived = 0;
+        unsigned long long lastSecGoodMessagesReceived = 0;
+        unsigned long long lastSecTotalBytesReceived = 0;
+        unsigned long long lastSecTotalBytesSent = 0;
+        void secondPassed()
+        {
+            goodMessagesReceivedLastSec = goodMessagesReceived - lastSecGoodMessagesReceived;
+            messagesRecLastSec = totalMessagesReceived - lastSecTotalMessagesReceived;
+            messagesSentLastSec = totalMessagesSent - lastSecTotalMessagesSent;
+            bytesRecLastSec = totalBytesReceived - lastSecTotalBytesReceived;
+            bytesSentLastSec = totalBytesSent - lastSecTotalBytesSent;
+            lastSecTotalMessagesSent = totalMessagesSent;
+            lastSecTotalMessagesReceived = totalMessagesReceived;
+            lastSecGoodMessagesReceived = goodMessagesReceived;
+            lastSecTotalBytesReceived = totalBytesReceived;
+            lastSecTotalBytesSent = totalBytesSent;
+            goodMessagesReceivedPerSecRatio = (float)goodMessagesReceivedLastSec / (float)messagesRecLastSec;
+        }
+        friend class ArduinoWyrzutnia;
+    };
+
+    ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
     ~ArduinoWyrzutnia();
+
+    tenso& getTensoL();
+    tenso& getTensoR();
+    const float& getTemperature();
+    const uartStatistics& getUartStats();
+
+    void tareRocketPoint();
+    void tareEmptyRocketPoint();
+    void setScaleLeft(double scale);
+    void setScaleRight(double scale);
+
+    void secondPassedUpdateStats();
 private:
-    int32_t offset_1_t1 = 809;
-    int32_t offset_2_t1 = 0;
-    int32_t offset_1_t2 = 597;
-    int32_t offset_2_t2 = 0;
-    std::vector<int32_t> srednia_100_t_1;
-    std::vector<int32_t> srednia_100_t_2;
-    unsigned int srednia_idx = 0;
+    tenso tensoL, tensoR;
+    float temperature = 0.0;
     std::thread readT;
     void readingLoop();
-    int serial_port;
+    std::string serialPort;
+    int serialPortFD;
     void openSerialPort();
-    unsigned char read_buff[128];
+    unsigned char read_buff[256];
     void decodeRamka(unsigned char* ramka, unsigned int size);
+
+    std::function<void()> newTensoCallback;
+    std::function<void()> newSensorsCallback;
+
+    uartStatistics uartStats;
 };
