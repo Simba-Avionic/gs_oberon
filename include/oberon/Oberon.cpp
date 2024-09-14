@@ -4,12 +4,13 @@ Oberon::Oberon()
     : Node("oberon")
 {
     loadCellsLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("/oberon/launch_tower/tenso", 10);
+    loadCellsParamsPublisher = this->create_publisher<gs_interfaces::msg::LoadCellsParams>("/oberon/launch_tower/tenso_params", 3);
     temperatureLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/launch_tower/temperature", 3);
     loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Oberon::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
     arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS0");        // RPI - always /dev/ttyS0  
     // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyUSB0");   // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
     wyrzutniaUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 10);
-    wyrzutniaUartStatsTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::publishWyrzutniaUartStats, this));
+    oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::oneSecondTimerCallback, this));
 
     createLiveConfigIfDoesNotExist();
     loadLiveConfig();
@@ -17,6 +18,12 @@ Oberon::Oberon()
 
 Oberon::~Oberon()
 {
+}
+
+void Oberon::oneSecondTimerCallback()
+{
+    publishWyrzutniaUartStats();
+    publishLoadCellsParams();
 }
 
 void Oberon::arduinoWyrzutniaTensoCallback()
@@ -78,6 +85,23 @@ void Oberon::publishWyrzutniaUartStats()
     wyrzutniaUartStatsPub->publish(msg);
 }
 
+void Oberon::publishLoadCellsParams()
+{
+    gs_interfaces::msg::LoadCellsParams msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
+    auto tL = arduinoWyrzutnia->getTensoL();
+    auto tR = arduinoWyrzutnia->getTensoR();
+    msg.tenso_l_rocket_point = tL.rocket_point;
+    msg.tenso_l_empty_rocket_point = tL.empty_rocket_point;
+    msg.tenso_l_scale = tL.scale;
+    msg.tenso_r_rocket_point = tR.rocket_point;
+    msg.tenso_r_empty_rocket_point = tR.empty_rocket_point;
+    msg.tenso_r_scale = tR.scale;
+    msg.lean_angle = arduinoWyrzutnia->getLeanAngle();
+    loadCellsParamsPublisher->publish(msg);
+}
+
 void Oberon::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg)
 {
     RCLCPP_INFO(this->get_logger(), "Wyrzutnia tare msg from %s", msg->header.frame_id.c_str());
@@ -89,6 +113,8 @@ void Oberon::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTar
         arduinoWyrzutnia->setScaleLeft(msg->scale_left);
     if (msg->set_scale_right)
         arduinoWyrzutnia->setScaleRight(msg->scale_right);
+    if (msg->set_lean_angle)
+        arduinoWyrzutnia->setLeanAngle(msg->lean_angle);
     saveLiveConfig();
 }
 
