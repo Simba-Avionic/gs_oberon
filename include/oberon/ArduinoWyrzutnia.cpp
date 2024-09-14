@@ -61,7 +61,8 @@ void ArduinoWyrzutnia::openSerialPort()
 
 void ArduinoWyrzutnia::readingLoop()
 {
-    unsigned char ramka_buff[128];
+    #define BUFF_SIZE 512
+    unsigned char ramka_buff[BUFF_SIZE];
     unsigned int ramka_size = 0;       // obecna ilosc bajtow w buforze ramki
     while (true)
     {
@@ -76,6 +77,13 @@ void ArduinoWyrzutnia::readingLoop()
         {
             unsigned char b = read_buff[i];
             ramka_buff[ramka_size++] = b;
+
+            if (ramka_size >= BUFF_SIZE)    // zabezpieczenie przed overflowem
+            {
+                ramka_size = 0;
+                continue;
+            }
+
             if (b == 0xcc)
             {
                 ramka_size = 0;
