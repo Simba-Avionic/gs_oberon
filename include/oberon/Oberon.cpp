@@ -162,6 +162,9 @@ void Oberon::loadLiveConfig()
     file >> tensoR.rocket_point;
     file >> tensoR.empty_rocket_point;
     file >> tensoR.scale;
+    float leanAngle;
+    file >> leanAngle;
+    arduinoWyrzutnia->setLeanAngle(leanAngle);
     file.close();
 }
 
@@ -183,5 +186,6 @@ void Oberon::saveLiveConfig()
     file << tensoR.rocket_point << std::endl;
     file << tensoR.empty_rocket_point << std::endl;
     file << tensoR.scale << std::endl;
+    file << arduinoWyrzutnia->getLeanAngle() << std::endl;
     file.close();
 }
