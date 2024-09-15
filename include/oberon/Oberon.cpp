@@ -53,15 +53,11 @@ void Oberon::arduinoWyrzutniaTensoCallback()
     auto tR = arduinoWyrzutnia->getTensoR();
 
     msg.tenso_l.raw_val = tL.raw_value;
-    msg.tenso_l.vehicle_point = tL.rocket_point;
-    msg.tenso_l.fuel_point = tL.empty_rocket_point;
     msg.tenso_l.raw_kg = tL.raw_kg;
     msg.tenso_l.vehicle_kg = tL.rocket_kg;
     msg.tenso_l.fuel_kg = tL.fuel_kg;
 
     msg.tenso_r.raw_val = tR.raw_value;
-    msg.tenso_r.vehicle_point = tR.rocket_point;
-    msg.tenso_r.fuel_point = tR.empty_rocket_point;
     msg.tenso_r.raw_kg = tR.raw_kg;
     msg.tenso_r.vehicle_kg = tR.rocket_kg;
     msg.tenso_r.fuel_kg = tR.fuel_kg;
@@ -134,6 +130,7 @@ void Oberon::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTar
     if (msg->set_lean_angle)
         arduinoWyrzutnia->setLeanAngle(msg->lean_angle);
     saveLiveConfig();
+    publishLoadCellsParams();
 }
 
 void Oberon::createLiveConfigIfDoesNotExist()
