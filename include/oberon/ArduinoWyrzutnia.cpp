@@ -67,6 +67,7 @@ void ArduinoWyrzutnia::readingLoop()
     while (true)
     {
         int n = read(serialPortFD, &read_buff, sizeof(read_buff));
+        // printf("n: %d\n", n);
         if (n < 0)
         {
             printf("Error %i from read: %s\n", errno, strerror(errno));
