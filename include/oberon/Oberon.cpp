@@ -1,4 +1,4 @@
-#include "Obernon.hpp"
+#include "Oberon.hpp"
 
 Oberon::Oberon()
     : Node("oberon")
@@ -8,6 +8,9 @@ Oberon::Oberon()
     loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Oberon::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
     arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS0");        // RPI - always /dev/ttyS0  
     // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyUSB0");   // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
+    
+    powerMonitorPublisher = this->create_publisher<gs_interfaces::msg::Power>("/oberon/power", 5);
+    powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Oberon::powerMonitorCallback, this));
     wyrzutniaUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 10);
     wyrzutniaUartStatsTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::publishWyrzutniaUartStats, this));
 
@@ -17,6 +20,21 @@ Oberon::Oberon()
 
 Oberon::~Oberon()
 {
+}
+
+void Oberon::powerMonitorCallback()
+{
+    gs_interfaces::msg::Power msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
+
+    auto power = powerMonitor->getPower();
+    msg.shunt_voltage = power.shunt_voltage;
+    msg.bus_voltage = power.bus_voltage;
+    msg.power = power.power;
+    msg.current = power.current;
+
+    powerMonitorPublisher->publish(msg);
 }
 
 void Oberon::arduinoWyrzutniaTensoCallback()

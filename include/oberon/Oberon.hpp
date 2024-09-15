@@ -8,8 +8,10 @@
 #include "gs_interfaces/msg/load_cells_tare.hpp"
 #include "gs_interfaces/msg/temperature.hpp"
 #include "gs_interfaces/msg/uart_statistics.hpp"
+#include "gs_interfaces/msg/power.hpp"
 
 #include "ArduinoWyrzutnia.hpp"
+#include "PowerMonitor.hpp"
 
 class Oberon : public rclcpp::Node
 {
@@ -19,11 +21,15 @@ public:
 private:
     rclcpp::Publisher<gs_interfaces::msg::LoadCells>::SharedPtr loadCellsLaunchPadPublisher;
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureLaunchPadPublisher;
+    rclcpp::Publisher<gs_interfaces::msg::Power>::SharedPtr powerMonitorPublisher;
     rclcpp::Subscription<gs_interfaces::msg::LoadCellsTare>::SharedPtr loadCellsLaunchPadTareSubscription;
     std::unique_ptr<ArduinoWyrzutnia> arduinoWyrzutnia;
     void arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg);
     void arduinoWyrzutniaTensoCallback();
     void arduinoWyrzutniaTemperatureCallback();
+
+    std::unique_ptr<PowerMonitor> powerMonitor;
+    void powerMonitorCallback();
 
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr wyrzutniaUartStatsPub;
     rclcpp::TimerBase::SharedPtr wyrzutniaUartStatsTimer;
