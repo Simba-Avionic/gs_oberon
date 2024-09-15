@@ -1,11 +1,11 @@
 #include "ArduinoWyrzutnia.hpp"
 
 #include <cstring>
+#include <cmath>
 
 ArduinoWyrzutnia::ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort)
     : serialPort(serialPort), newTensoCallback(newTensoCallback), newSensorsCallback(newSensorsCallback)
 {
-    tensoL.rocket_point = 569;
     openSerialPort();
     readT = std::thread(&ArduinoWyrzutnia::readingLoop, this);
 }
@@ -61,7 +61,8 @@ void ArduinoWyrzutnia::openSerialPort()
 
 void ArduinoWyrzutnia::readingLoop()
 {
-    unsigned char ramka_buff[128];
+    #define BUFF_SIZE 512
+    unsigned char ramka_buff[BUFF_SIZE];
     unsigned int ramka_size = 0;       // obecna ilosc bajtow w buforze ramki
     while (true)
     {
@@ -77,6 +78,13 @@ void ArduinoWyrzutnia::readingLoop()
         {
             unsigned char b = read_buff[i];
             ramka_buff[ramka_size++] = b;
+
+            if (ramka_size >= BUFF_SIZE)    // zabezpieczenie przed overflowem
+            {
+                ramka_size = 0;
+                continue;
+            }
+
             if (b == 0xcc)
             {
                 ramka_size = 0;
@@ -135,10 +143,18 @@ void ArduinoWyrzutnia::decodeRamka(unsigned char* ramka, unsigned int size)
         tensoL.raw_kg = tensoL.raw_value * tensoL.scale / 1000.0;
         tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale / 1000.0;
         tensoL.fuel_kg = (tensoL.raw_value - tensoL.empty_rocket_point) * tensoL.scale / 1000.0;
-
+        
         tensoR.raw_kg = tensoR.raw_value * tensoR.scale / 1000.0;
         tensoR.rocket_kg = (tensoR.raw_value - tensoR.rocket_point) * tensoR.scale / 1000.0;
         tensoR.fuel_kg = (tensoR.raw_value - tensoR.empty_rocket_point) * tensoR.scale / 1000.0;
+
+        // uwzglednienie kata nachylenia
+        tensoL.raw_kg /= lean.cosinus;      
+        tensoL.rocket_kg /= lean.cosinus;
+        tensoL.fuel_kg /= lean.cosinus;
+        tensoR.raw_kg /= lean.cosinus;
+        tensoR.rocket_kg /= lean.cosinus;
+        tensoR.fuel_kg /= lean.cosinus;
         
         if (newTensoCallback)
             newTensoCallback();
@@ -160,6 +176,11 @@ ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoL()
 ArduinoWyrzutnia::tenso& ArduinoWyrzutnia::getTensoR()
 {
     return tensoR;
+}
+
+const float& ArduinoWyrzutnia::getLeanAngle()
+{
+    return lean.angle;
 }
 
 const float& ArduinoWyrzutnia::getTemperature()
@@ -197,4 +218,10 @@ void ArduinoWyrzutnia::setScaleLeft(double scale)
 void ArduinoWyrzutnia::setScaleRight(double scale)
 {
     tensoR.scale = scale;
+}
+
+void ArduinoWyrzutnia::setLeanAngle(float angle)
+{
+    lean.angle = angle;
+    lean.cosinus = cos(angle * 3.14159265359 / 180.0);
 }

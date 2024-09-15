@@ -75,7 +75,8 @@ public:
             lastSecGoodMessagesReceived = goodMessagesReceived;
             lastSecTotalBytesReceived = totalBytesReceived;
             lastSecTotalBytesSent = totalBytesSent;
-            goodMessagesReceivedPerSecRatio = (float)goodMessagesReceivedLastSec / (float)messagesRecLastSec;
+            if (messagesRecLastSec > 0)
+                goodMessagesReceivedPerSecRatio = (float)goodMessagesReceivedLastSec / (float)messagesRecLastSec;
         }
         friend class ArduinoWyrzutnia;
     };
@@ -85,6 +86,7 @@ public:
 
     tenso& getTensoL();
     tenso& getTensoR();
+    const float& getLeanAngle();
     const float& getTemperature();
     const uartStatistics& getUartStats();
 
@@ -92,10 +94,17 @@ public:
     void tareEmptyRocketPoint();
     void setScaleLeft(double scale);
     void setScaleRight(double scale);
+    void setLeanAngle(float angle);
 
     void secondPassedUpdateStats();
 private:
     tenso tensoL, tensoR;
+
+    struct Lean {
+        float angle = 0.0;
+        float cosinus = 1.0;
+    } lean;
+
     float temperature = 0.0;
     std::thread readT;
     void readingLoop();
