@@ -15,10 +15,13 @@ set(SOURCES
   src/main_oberon.cpp
   include/oberon/Oberon.cpp
   include/oberon/ArduinoWyrzutnia.cpp
+  include/oberon/PowerMonitor.cpp
 )
 
 add_executable(oberon ${SOURCES})
 ament_target_dependencies(oberon rclcpp gs_interfaces)
+# i2c
+target_link_libraries(oberon i2c)
 
 install(TARGETS oberon
   DESTINATION lib/${PROJECT_NAME})
