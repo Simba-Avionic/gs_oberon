@@ -107,6 +107,9 @@ void TensoProxy::sendTensoByUDP(const gs_interfaces::msg::LoadCells::SharedPtr m
     sendLine += std::to_string(msg->combined_raw_kg) + ";";
     sendLine += std::to_string(msg->combined_vehicle_kg) + ";";
     sendLine += std::to_string(msg->combined_fuel_kg) + ";";
+    sendLine += "\n";
+
+    sendto(udpSocket, sendLine.c_str(), sendLine.size(), 0, (sockaddr*)&clientAddr, sizeof(clientAddr));
 }
 
 void TensoProxy::createHTTP()
