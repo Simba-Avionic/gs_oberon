@@ -20,10 +20,14 @@ set(SOURCES
 
 add_executable(oberon ${SOURCES})
 ament_target_dependencies(oberon rclcpp gs_interfaces)
-# i2c
 target_link_libraries(oberon i2c)
 
+add_executable(tenso_proxy src/main_tenso_proxy.cpp)
+ament_target_dependencies(tenso_proxy rclcpp gs_interfaces)
+
 install(TARGETS oberon
+  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS tenso_proxy
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
