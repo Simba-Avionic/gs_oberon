@@ -54,7 +54,6 @@ void ArduinoWyrzutnia::openSerialPort()
     if (tcsetattr(serialPortFD, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         exit(1);
-        // todo: throw exception / reconnect
     }
     printf("Serial port opened: %s\n", serialPort.c_str());
 }
