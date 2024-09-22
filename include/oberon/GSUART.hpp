@@ -40,7 +40,7 @@ namespace GSUART
         Byte checksum;
         bool valid = false;
         
-        virtual void serialize(const Byte* bytes_out, const size_t* size_out) const = 0;
+        virtual void serialize(Byte* bytes_out, size_t* size_out) const = 0;
         virtual void deserialize(const Byte* bytes_in, const size_t size_in) = 0;
         friend class Messenger;
     };
@@ -107,7 +107,7 @@ namespace GSUART
         int tenso_left_raw = 0;
         int tenso_right_raw = 0;
     private:
-        void serialize(const Byte* bytes_out, const size_t* size_out) const override;
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 
@@ -116,7 +116,7 @@ namespace GSUART
     public:
         float temperature_celsius = 0.0;
     private:
-        void serialize(const Byte* bytes_out, const size_t* size_out) const override;
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 
@@ -126,7 +126,7 @@ namespace GSUART
         signed char valve_vent = 0;
         signed char valve_feed = 0;
     private:
-        void serialize(const Byte* bytes_out, const size_t* size_out) const override;
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 
@@ -136,7 +136,7 @@ namespace GSUART
         signed char valve_vent = 0;
         signed char valve_feed = 0;
     private:
-        void serialize(const Byte* bytes_out, const size_t* size_out) const override;
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 
@@ -145,7 +145,7 @@ namespace GSUART
     public:
         float pressure_bar = 0.0;
     private:
-        void serialize(const Byte* bytes_out, const size_t* size_out) const override;
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 

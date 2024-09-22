@@ -1,5 +1,7 @@
 #include "GSUART.hpp"
 
+#include <iostream>
+// #include <cstring>
 #include <unistd.h>
 #include <termio.h>
 #include <errno.h>
@@ -20,7 +22,28 @@ namespace GSUART
 
     void UARTStatistics::calculatePerSecValues()
     {
-        // TODO
+        auto now = std::chrono::high_resolution_clock::now();        
+        auto duration = std::chrono::duration_cast<std::chrono::duration<float>>(now - lastCalcTime).count();
+        
+        if (duration == 0.0f) {
+            return;
+        }
+
+        messagesSentPerSec = static_cast<unsigned int>((totalMessagesSent - lastSecTotalMessagesSent) / duration);
+        messagesRecPerSec = static_cast<unsigned int>((totalMessagesReceived - lastSecTotalMessagesReceived) / duration);
+        goodMessagesReceivedPerSec = static_cast<unsigned int>((goodMessagesReceived - lastSecGoodMessagesReceived) / duration);
+        bytesRecPerSec = static_cast<unsigned int>((totalBytesReceived - lastSecTotalBytesReceived) / duration);
+        bytesSentPerSec = static_cast<unsigned int>((totalBytesSent - lastSecTotalBytesSent) / duration);
+
+        goodMessagesReceivedPerSecRatio = (messagesRecPerSec > 0) ? 
+            static_cast<float>(goodMessagesReceivedPerSec) / messagesRecPerSec : 0.0f;
+
+        lastSecTotalMessagesSent = totalMessagesSent;
+        lastSecTotalMessagesReceived = totalMessagesReceived;
+        lastSecGoodMessagesReceived = goodMessagesReceived;
+        lastSecTotalBytesReceived = totalBytesReceived;
+        lastSecTotalBytesSent = totalBytesSent;
+        lastCalcTime = now;
     }
 
     // arduino is different here
@@ -57,18 +80,33 @@ namespace GSUART
         writeToSerialPort(frame, idx);
     }
     
-    // arduino is different here, bo serial.read
+    // TODO: uwzglednic blocking???
     Message* Messenger::receive(bool blocking)
     {
         Byte read_buff[READ_WRITE_BUFF_SIZE];
         int n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
-        if (n < 0)
+        
+        // If blocking is true, we want to wait for data to be received
+        if (blocking)
         {
-            printf("Error %i from read: %s\n", errno, strerror(errno));
-            return nullptr;
+            // Loop until we receive at least one byte
+            while (n <= 0)
+            {
+                n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
+            }
         }
+        else
+        {
+            // If non-blocking, read and return immediately if no data
+            n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
+            if (n <= 0)
+            {
+                return nullptr;
+            }
+        }
+        
         uartStats.totalBytesReceived += n;
-        for (int i=0; i<n; i++)
+        for (int i = 0; i < n; i++)
         {
             Byte b = read_buff[i];
             receive_buff[read_buff_idx++] = b;
@@ -204,63 +242,95 @@ namespace GSUART
     // arduino is different here
     void Messenger::writeToSerialPort(const Byte* bytes, const size_t size)
     {
-        // TODO
+        ssize_t res = write(serialPortFD, bytes, size);
+        if (res != static_cast<ssize_t>(size)) {
+            printf("Error writing to serial port: %s\n", strerror(errno));
+        } else {
+            printf("Successfully wrote %i bytes to serial port.\n", res);
+        }
     }
 
     ssize_t Messenger::readFromSerialPort(Byte* bytes, const size_t size)
     {
-        // TODO
+        ssize_t bytesRead = read(serialPortFD, bytes, size);
+
+        if (bytesRead < 0) {
+            printf("Error %i from read: %s\n", errno, strerror(errno));
+        }
+
+        return bytesRead;
     }
 
 
-    void MsgTenso::serialize(const Byte* bytes_out, const size_t* size_out) const
+    void MsgTenso::serialize(Byte* bytes_out, size_t* size_out) const
     {
-        // TODO
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(int) * 2;
+        memcpy(bytes_out, &tenso_left_raw, sizeof(int));
+        memcpy(bytes_out + sizeof(int), &tenso_right_raw, sizeof(int));
     }
 
     void MsgTenso::deserialize(const Byte* bytes_in, const size_t size_in)
     {
-        // TODO
+        if (bytes_in == nullptr || size_in < sizeof(int) * 2) return;
+        memcpy(&tenso_left_raw, bytes_in, size_in);
+        memcpy(&tenso_right_raw, bytes_in + size_in, size_in);
     }
 
-    void MsgTemperature::serialize(const Byte* bytes_out, const size_t* size_out) const
+    void MsgTemperature::serialize(Byte* bytes_out, size_t* size_out) const
     {
-        // TODO
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(float);
+        memcpy(bytes_out, &temperature_celsius, sizeof(float));
     }
 
     void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in)
     {
-        // TODO
+        if (bytes_in == nullptr || size_in < sizeof(float)) return;
+        memcpy(&temperature_celsius, bytes_in, size_in);
     }
 
-    void MsgZaworySterowanie::serialize(const Byte* bytes_out, const size_t* size_out) const
+    void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const
     {
-        // TODO
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(signed char) * 2;
+        memcpy(bytes_out, &valve_vent, sizeof(signed char));
+        memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
     }
 
     void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in)
     {
-        // TODO
+        if (bytes_in == nullptr || size_in < sizeof(signed char) * 2) return;
+        memcpy(&valve_vent, bytes_in, size_in);
+        memcpy(&valve_feed, bytes_in + size_in, size_in);
     }
 
-    void MsgZaworyPozycja::serialize(const Byte* bytes_out, const size_t* size_out) const
+    void MsgZaworyPozycja::serialize(Byte* bytes_out, size_t* size_out) const
     {
-        // TODO
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(signed char) * 2;
+        memcpy(bytes_out, &valve_vent, sizeof(signed char));
+        memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
     }
 
     void MsgZaworyPozycja::deserialize(const Byte* bytes_in, const size_t size_in)
     {
-        // TODO
+        if (bytes_in == nullptr || size_in < sizeof(signed char) * 2) return;
+        memcpy(&valve_vent, bytes_in, size_in);
+        memcpy(&valve_feed, bytes_in + size_in, size_in);
     }
 
-    void MsgPressure::serialize(const Byte* bytes_out, const size_t* size_out) const
+    void MsgPressure::serialize(Byte* bytes_out, size_t* size_out) const
     {
-        // TODO
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(float);
+        memcpy(bytes_out, &pressure_bar, sizeof(float));
     }
 
     void MsgPressure::deserialize(const Byte* bytes_in, const size_t size_in)
     {
-        // TODO
+        if (bytes_in == nullptr || size_in < sizeof(float)) return;
+        memcpy(&pressure_bar, bytes_in, size_in);
     }
 
     void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx)
