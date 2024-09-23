@@ -80,23 +80,22 @@ void Oberon::arduinoWyrzutniaTemperatureCallback()
 
 void Oberon::publishWyrzutniaUartStats()
 {
-    arduinoWyrzutnia->secondPassedUpdateStats();
-    gs_interfaces::msg::UartStatistics msg;
-    msg.header.stamp = this->now();
-    msg.header.frame_id = this->get_fully_qualified_name();
-    auto stats = arduinoWyrzutnia->getUartStats();
-    msg.total_messages_received = stats.totalMessagesReceived;
-    msg.total_messages_sent = stats.totalMessagesSent;
-    msg.good_messages_received = stats.goodMessagesReceived;
-    msg.total_bytes_received = stats.totalBytesReceived;
-    msg.total_bytes_sent = stats.totalBytesSent;
-    msg.messages_received_per_second = stats.messagesRecLastSec;
-    msg.messages_sent_per_second = stats.messagesSentLastSec;
-    msg.bytes_received_per_second = stats.bytesRecLastSec;
-    msg.bytes_sent_per_second = stats.bytesSentLastSec;
-    msg.good_messages_received_per_second = stats.goodMessagesReceivedLastSec;
-    msg.good_messages_ratio_received_per_second = stats.goodMessagesReceivedPerSecRatio;
-    wyrzutniaUartStatsPub->publish(msg);
+    // gs_interfaces::msg::UartStatistics msg;
+    // msg.header.stamp = this->now();
+    // msg.header.frame_id = this->get_fully_qualified_name();
+    // auto stats = arduinoWyrzutnia->getUartStats();
+    // msg.total_messages_received = stats.totalMessagesReceived;
+    // msg.total_messages_sent = stats.totalMessagesSent;
+    // msg.good_messages_received = stats.goodMessagesReceived;
+    // msg.total_bytes_received = stats.totalBytesReceived;
+    // msg.total_bytes_sent = stats.totalBytesSent;
+    // msg.messages_received_per_second = stats.messagesRecLastSec;
+    // msg.messages_sent_per_second = stats.messagesSentLastSec;
+    // msg.bytes_received_per_second = stats.bytesRecLastSec;
+    // msg.bytes_sent_per_second = stats.bytesSentLastSec;
+    // msg.good_messages_received_per_second = stats.goodMessagesReceivedLastSec;
+    // msg.good_messages_ratio_received_per_second = stats.goodMessagesReceivedPerSecRatio;
+    // wyrzutniaUartStatsPub->publish(msg);
 }
 
 void Oberon::publishLoadCellsParams()

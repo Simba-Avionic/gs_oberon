@@ -11,6 +11,8 @@
 #include <vector>
 #include <functional>
 
+#include "GSUART.hpp"
+
 #define RAMKA_META_SIZE     4
 #define RAMKA_START         0xCC    // 11001100   204(10) S: 172(10)
 #define RAMKA_STOP          0x33    // 00110011   51(10)  S: 19(10)
@@ -44,42 +46,6 @@ public:
             return sum / 30;
         }
     };
-    struct uartStatistics
-    {
-        unsigned long long totalMessagesSent = 0;
-        unsigned long long totalMessagesReceived = 0;
-        unsigned long long goodMessagesReceived = 0;
-        unsigned long long totalBytesReceived = 0;
-        unsigned long long totalBytesSent = 0;
-        unsigned int goodMessagesReceivedLastSec = 0;
-        unsigned int messagesRecLastSec = 0;
-        unsigned int messagesSentLastSec = 0;
-        unsigned int bytesRecLastSec = 0;
-        unsigned int bytesSentLastSec = 0;
-        float goodMessagesReceivedPerSecRatio = 0.0;
-    private:
-        unsigned long long lastSecTotalMessagesSent = 0;
-        unsigned long long lastSecTotalMessagesReceived = 0;
-        unsigned long long lastSecGoodMessagesReceived = 0;
-        unsigned long long lastSecTotalBytesReceived = 0;
-        unsigned long long lastSecTotalBytesSent = 0;
-        void secondPassed()
-        {
-            goodMessagesReceivedLastSec = goodMessagesReceived - lastSecGoodMessagesReceived;
-            messagesRecLastSec = totalMessagesReceived - lastSecTotalMessagesReceived;
-            messagesSentLastSec = totalMessagesSent - lastSecTotalMessagesSent;
-            bytesRecLastSec = totalBytesReceived - lastSecTotalBytesReceived;
-            bytesSentLastSec = totalBytesSent - lastSecTotalBytesSent;
-            lastSecTotalMessagesSent = totalMessagesSent;
-            lastSecTotalMessagesReceived = totalMessagesReceived;
-            lastSecGoodMessagesReceived = goodMessagesReceived;
-            lastSecTotalBytesReceived = totalBytesReceived;
-            lastSecTotalBytesSent = totalBytesSent;
-            if (messagesRecLastSec > 0)
-                goodMessagesReceivedPerSecRatio = (float)goodMessagesReceivedLastSec / (float)messagesRecLastSec;
-        }
-        friend class ArduinoWyrzutnia;
-    };
 
     ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
     ~ArduinoWyrzutnia();
@@ -88,7 +54,8 @@ public:
     tenso& getTensoR();
     const float& getLeanAngle();
     const float& getTemperature();
-    const uartStatistics& getUartStats();
+
+    const GSUART::UARTStatistics& getUartStats();
 
     void tareRocketPoint();
     void tareEmptyRocketPoint();
@@ -96,7 +63,6 @@ public:
     void setScaleRight(double scale);
     void setLeanAngle(float angle);
 
-    void secondPassedUpdateStats();
 private:
     tenso tensoL, tensoR;
 
@@ -106,16 +72,14 @@ private:
     } lean;
 
     float temperature = 0.0;
+
+    GSUART::UARTStatistics::Stats remoteUARTStats;
+
+    GSUART::Messenger messenger;
     std::thread readT;
     void readingLoop();
-    std::string serialPort;
-    int serialPortFD;
-    void openSerialPort();
-    unsigned char read_buff[256];
-    void decodeRamka(unsigned char* ramka, unsigned int size);
 
     std::function<void()> newTensoCallback;
-    std::function<void()> newSensorsCallback;
-
-    uartStatistics uartStats;
+    std::function<void()> newTemperatureCallback;
+    std::function<void()> newUARTStatsCallback;
 };

@@ -16,6 +16,7 @@ set(SOURCES
   include/oberon/Oberon.cpp
   include/oberon/ArduinoWyrzutnia.cpp
   include/oberon/PowerMonitor.cpp
+  include/oberon/GSUART.cpp
 )
 
 add_executable(oberon ${SOURCES})

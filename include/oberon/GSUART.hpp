@@ -21,7 +21,11 @@ namespace GSUART
     typedef uint8_t         Byte;
 
 
-    // can't use RAMKA_START, RAMKA_STOP, RAMKA_SPECIAL
+    void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx);
+    uint64_t getCurrentTimeMillis();
+
+
+    // DON'T USE RAMKA_START, RAMKA_STOP, RAMKA_SPECIAL
     enum class MsgID : Byte
     {
         TENSO = 0x01,
@@ -37,12 +41,12 @@ namespace GSUART
     {
     public:
         Message(MsgID id);
+        virtual ~Message() = default;
         MsgID getID() const;
         bool isValid() const;
     protected:
         MsgID id;
         Byte checksum;
-        bool valid = false;
         
         virtual void serialize(Byte* bytes_out, size_t* size_out) const = 0;
         virtual void deserialize(const Byte* bytes_in, const size_t size_in) = 0;
@@ -92,7 +96,7 @@ namespace GSUART
         void send(const Message& msg);
         Message* receive();
 
-        const UARTStatistics& getStats() const;
+        const UARTStatistics& getStats();
     private:
         std::string serialPort;
         int serialPortFD;
@@ -172,7 +176,4 @@ namespace GSUART
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
-
-    void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx);
-    uint64_t getCurrentTimeMillis();
 }

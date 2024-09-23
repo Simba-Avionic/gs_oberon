@@ -17,11 +17,6 @@ namespace GSUART
         return id;
     }
 
-    bool Message::isValid() const
-    {
-        return valid;
-    }
-
     void UARTStatistics::calculatePerSecValues()
     {
         auto now_millis = getCurrentTimeMillis();
@@ -57,7 +52,11 @@ namespace GSUART
 
     Messenger::~Messenger()
     {
-        // TODO
+        if (receivedMsg)
+        {
+            delete receivedMsg;
+            receivedMsg = nullptr;
+        }
     }
 
     void Messenger::send(const Message& msg)
@@ -84,6 +83,10 @@ namespace GSUART
     
     Message* Messenger::receive()
     {
+        // arduino
+        // if (serial.available() <= 0)
+        //     return nullptr;
+
         if (receivedMsg)
         {
             delete receivedMsg;
@@ -122,8 +125,9 @@ namespace GSUART
         return receivedMsg;
     }
 
-    const UARTStatistics& Messenger::getStats() const
+    const UARTStatistics& Messenger::getStats()
     {
+        uartStats.calculatePerSecValues();
         return uartStats;
     }
 
@@ -160,7 +164,7 @@ namespace GSUART
         if (checksum != msg_bytes[conv_idx - 1])
         {
             return;
-        }      
+        }
         uartStats.stats.goodMessagesReceived++;
 
         if (receivedMsg)
@@ -245,10 +249,11 @@ namespace GSUART
         if (res != static_cast<ssize_t>(size)) {
             printf("Error writing to serial port: %s\n", strerror(errno));
         } else {
-            printf("Successfully wrote %i bytes to serial port.\n", res);
+            printf("Successfully wrote %ld bytes to serial port.\n", res);
         }
     }
 
+    // arduino is different here
     ssize_t Messenger::readFromSerialPort(Byte* bytes, const size_t size)
     {
         ssize_t bytesRead = read(serialPortFD, bytes, size);

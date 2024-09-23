@@ -29,7 +29,7 @@
 #define _REG_CALIBRATION                   (0x05)   /// <Register Calibration
 
 static const int I2C_ADDRESSES[4] = {0x45, 0x44, 0x41, 0x40}; // possible addresses of i2c device
-static const char *I2C_BUS = "/dev/i2c-1";
+#define I2C_BUS "/dev/i2c-1"
 
 class PowerMonitor
 {
