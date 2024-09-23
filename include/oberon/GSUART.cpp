@@ -10,6 +10,8 @@
 
 namespace GSUART
 {
+    Message::Message(MsgID id) : id(id) {}
+    
     MsgID Message::getID() const
     {
         return id;
@@ -22,28 +24,28 @@ namespace GSUART
 
     void UARTStatistics::calculatePerSecValues()
     {
-        auto now = std::chrono::high_resolution_clock::now();        
-        auto duration = std::chrono::duration_cast<std::chrono::duration<float>>(now - lastCalcTime).count();
+        auto now_millis = getCurrentTimeMillis();
+        auto duration = static_cast<float>(now_millis - lastCalcTime) / 1000.0f;
         
         if (duration == 0.0f) {
             return;
         }
 
-        messagesSentPerSec = static_cast<unsigned int>((totalMessagesSent - lastSecTotalMessagesSent) / duration);
-        messagesRecPerSec = static_cast<unsigned int>((totalMessagesReceived - lastSecTotalMessagesReceived) / duration);
-        goodMessagesReceivedPerSec = static_cast<unsigned int>((goodMessagesReceived - lastSecGoodMessagesReceived) / duration);
-        bytesRecPerSec = static_cast<unsigned int>((totalBytesReceived - lastSecTotalBytesReceived) / duration);
-        bytesSentPerSec = static_cast<unsigned int>((totalBytesSent - lastSecTotalBytesSent) / duration);
+        stats.messagesSentPerSec = static_cast<unsigned int>((stats.totalMessagesSent - lastSecTotalMessagesSent) / duration);
+        stats.messagesRecPerSec = static_cast<unsigned int>((stats.totalMessagesReceived - lastSecTotalMessagesReceived) / duration);
+        stats.goodMessagesReceivedPerSec = static_cast<unsigned int>((stats.goodMessagesReceived - lastSecGoodMessagesReceived) / duration);
+        stats.bytesRecPerSec = static_cast<unsigned int>((stats.totalBytesReceived - lastSecTotalBytesReceived) / duration);
+        stats.bytesSentPerSec = static_cast<unsigned int>((stats.totalBytesSent - lastSecTotalBytesSent) / duration);
 
-        goodMessagesReceivedPerSecRatio = (messagesRecPerSec > 0) ? 
-            static_cast<float>(goodMessagesReceivedPerSec) / messagesRecPerSec : 0.0f;
+        stats.goodMessagesReceivedPerSecRatio = (stats.messagesRecPerSec > 0) ? 
+            static_cast<float>(stats.goodMessagesReceivedPerSec) / stats.messagesRecPerSec : 0.0f;
 
-        lastSecTotalMessagesSent = totalMessagesSent;
-        lastSecTotalMessagesReceived = totalMessagesReceived;
-        lastSecGoodMessagesReceived = goodMessagesReceived;
-        lastSecTotalBytesReceived = totalBytesReceived;
-        lastSecTotalBytesSent = totalBytesSent;
-        lastCalcTime = now;
+        lastSecTotalMessagesSent = stats.totalMessagesSent;
+        lastSecTotalMessagesReceived = stats.totalMessagesReceived;
+        lastSecGoodMessagesReceived = stats.goodMessagesReceived;
+        lastSecTotalBytesReceived = stats.totalBytesReceived;
+        lastSecTotalBytesSent = stats.totalBytesSent;
+        lastCalcTime = now_millis;
     }
 
     // arduino is different here
@@ -60,12 +62,12 @@ namespace GSUART
 
     void Messenger::send(const Message& msg)
     {
-        Byte frame[READ_WRITE_BUFF_SIZE];
+        Byte frame[WRITE_BUFF_SIZE];
         frame[0] = RAMKA_START;
         frame[1] = (Byte)msg.getID();
         
         size_t idx = 2;
-        Byte msgSerializedBytes[READ_WRITE_BUFF_SIZE];
+        Byte msgSerializedBytes[WRITE_BUFF_SIZE];
         size_t msgSerializedSize;
         msg.serialize(msgSerializedBytes, &msgSerializedSize);
         for (size_t i = 0; i < msgSerializedSize; i++)
@@ -80,51 +82,41 @@ namespace GSUART
         writeToSerialPort(frame, idx);
     }
     
-    // TODO: uwzglednic blocking???
-    Message* Messenger::receive(bool blocking)
+    Message* Messenger::receive()
     {
-        Byte read_buff[READ_WRITE_BUFF_SIZE];
-        int n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
-        
-        // If blocking is true, we want to wait for data to be received
-        if (blocking)
+        if (receivedMsg)
         {
-            // Loop until we receive at least one byte
-            while (n <= 0)
-            {
-                n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
-            }
+            delete receivedMsg;
+            receivedMsg = nullptr;
         }
-        else
-        {
-            // If non-blocking, read and return immediately if no data
-            n = readFromSerialPort(read_buff, READ_WRITE_BUFF_SIZE);
-            if (n <= 0)
-            {
-                return nullptr;
-            }
-        }
-        
-        uartStats.totalBytesReceived += n;
+
+        // gdyby brakowalo RAMU na arduino to ten buffor mozna zmniejszyc
+        Byte read_buff[READ_BUFF_SIZE];
+
+        int n = readFromSerialPort(read_buff, READ_BUFF_SIZE);
+    
+        uartStats.stats.totalBytesReceived += n;
         for (int i = 0; i < n; i++)
         {
             Byte b = read_buff[i];
-            receive_buff[read_buff_idx++] = b;
+            receive_buff[receive_buff_idx++] = b;
 
-            if (read_buff_idx >= READ_WRITE_BUFF_SIZE)    // zabezpieczenie przed overflowem
+            if (receive_buff_idx >= RECEIVE_BUFF_SIZE)    // zabezpieczenie przed overflowem
             {
-                read_buff_idx = 0;
+                uartStats.stats.bufforOverflows++;
+                receive_buff_idx = 0;
                 continue;
             }
 
             if (b == RAMKA_START)
             {
-                read_buff_idx = 0;
-                receive_buff[read_buff_idx++] = b;
+                receive_buff_idx = 0;
+                receive_buff[receive_buff_idx++] = b;
             }
             else if (b == RAMKA_STOP)
             {
-                decodeMsg(receive_buff, read_buff_idx);
+                decodeMsg(receive_buff, receive_buff_idx);
+                receive_buff_idx = 0;
             }       
         }
         return receivedMsg;
@@ -139,9 +131,11 @@ namespace GSUART
     {
         if (size < 3)
             return;
-        uartStats.totalMessagesReceived++;
-        // remove special values
-        Byte conv_msg[READ_WRITE_BUFF_SIZE];
+        if (msg_bytes[0] != RAMKA_START || msg_bytes[size-1] != RAMKA_STOP)
+            return;
+        
+        uartStats.stats.totalMessagesReceived++;
+        // remove special values, in place algorithm :O <- zamiast przepisywac do nowego bufora mozna przenosic w tym samym buforze
         size_t conv_idx = 0;
         for (size_t i=1; i<size-1; i++) // bez bajt start i stop
         {
@@ -150,30 +144,32 @@ namespace GSUART
             {
                 i++;
                 msg_bytes[i] += R_SPECIAL_DIF;
-                conv_msg[conv_idx++] = msg_bytes[i];
+                msg_bytes[conv_idx++] = msg_bytes[i];
             }
             else
-                conv_msg[conv_idx++] = b;
+                msg_bytes[conv_idx++] = b;
         }
 
         // sprawdzenie checksumy
         Byte checksum = 0;
         for (size_t i = 0; i < conv_idx - 1; i++) // exclude last byte (checksum)
         {
-            checksum += conv_msg[i];
+            checksum += msg_bytes[i];
         }
 
-        if (receivedMsg)
-            delete receivedMsg;
-        receivedMsg = nullptr;
-
-        if (checksum != conv_msg[conv_idx - 1])
+        if (checksum != msg_bytes[conv_idx - 1])
         {
             return;
         }      
-        uartStats.goodMessagesReceived++;
+        uartStats.stats.goodMessagesReceived++;
 
-        MsgID msgID = (MsgID)conv_msg[0];
+        if (receivedMsg)
+        {
+            uartStats.stats.messagesOverwritten++;
+            delete receivedMsg;
+        }
+
+        MsgID msgID = (MsgID)msg_bytes[0];
         switch (msgID)
         {
             case MsgID::TENSO:
@@ -191,8 +187,11 @@ namespace GSUART
             case MsgID::PRESSURE:
                 receivedMsg = new MsgPressure();
                 break;
+            case MsgID::UART_STATS:
+                receivedMsg = new MsgUartStats();
+                break;
         }
-        receivedMsg->deserialize(conv_msg+1, conv_idx-2);
+        receivedMsg->deserialize(msg_bytes+1, conv_idx-2);
     }
 
     // arduino is different here
@@ -333,11 +332,30 @@ namespace GSUART
         memcpy(&pressure_bar, bytes_in, size_in);
     }
 
+    void MsgUartStats::serialize(Byte* bytes_out, size_t* size_out) const
+    {
+        if (bytes_out == nullptr || size_out == nullptr) return;
+        *size_out = sizeof(UARTStatistics::Stats);
+        memcpy(bytes_out, &stats, sizeof(UARTStatistics::Stats));
+    }
+
+    void MsgUartStats::deserialize(const Byte* bytes_in, const size_t size_in)
+    {
+        if (bytes_in == nullptr || size_in < sizeof(UARTStatistics::Stats)) return;
+        memcpy(&stats, bytes_in, size_in);
+    }
+
     void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx)
     {
         if (byte == RAMKA_STOP || byte == RAMKA_START || byte == RAMKA_SPECIAL) {
             bytes[idx++] = RAMKA_SPECIAL;
             bytes[idx++] = byte - R_SPECIAL_DIF;
         } else bytes[idx++] = byte;
+    }
+
+    // arduino is different here
+    uint64_t getCurrentTimeMillis()
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     }
 }
