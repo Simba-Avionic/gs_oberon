@@ -3,10 +3,9 @@
 #include <cstring>
 #include <cmath>
 
-ArduinoWyrzutnia::ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newTemperatureCallback, std::string serialPort)
-    : messenger(serialPort), newTensoCallback(newTensoCallback), newTemperatureCallback(newTemperatureCallback)
+ArduinoWyrzutnia::ArduinoWyrzutnia(std::string serialPort, std::function<void()> newTensoCallback, std::function<void()> newTemperatureCallback, std::function<void()> newUARTStatsCallback)
+    : messenger(serialPort), newTensoCallback(newTensoCallback), newTemperatureCallback(newTemperatureCallback), newUARTStatsCallback(newUARTStatsCallback)
 {
-
     readT = std::thread(&ArduinoWyrzutnia::readingLoop, this);
 }
 
@@ -98,9 +97,14 @@ const float& ArduinoWyrzutnia::getTemperature()
     return temperature;
 }
 
-const GSUART::UARTStatistics& ArduinoWyrzutnia::getUartStats()
+const GSUART::UARTStatistics::Stats& ArduinoWyrzutnia::getUartStats()
 {
-    return messenger.getStats();
+    return messenger.getStats().stats;
+}
+
+const GSUART::UARTStatistics::Stats& ArduinoWyrzutnia::getRemoteUartStats()
+{
+    return remoteUARTStats;
 }
 
 void ArduinoWyrzutnia::tareRocketPoint()

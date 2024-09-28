@@ -21,7 +21,8 @@ public:
     ~Oberon();
 private:
     rclcpp::Publisher<gs_interfaces::msg::LoadCells>::SharedPtr loadCellsLaunchPadPublisher;
-    rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr wyrzutniaUartStatsPub;
+    rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr uartStatsPub;
+    rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr remoteUartStatsPub;
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureLaunchPadPublisher;
     rclcpp::Publisher<gs_interfaces::msg::LoadCellsParams>::SharedPtr loadCellsParamsPublisher;
     rclcpp::Publisher<gs_interfaces::msg::Power>::SharedPtr powerMonitorPublisher;
@@ -37,7 +38,8 @@ private:
     rclcpp::TimerBase::SharedPtr oneSecondTimer;
     void oneSecondTimerCallback();
 
-    void publishWyrzutniaUartStats();
+    void publishUartStats();
+    void publishArduinoWyrzutniaRemoteUartStats();
     void publishLoadCellsParams();
 
     void createLiveConfigIfDoesNotExist();

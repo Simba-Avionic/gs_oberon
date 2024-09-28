@@ -13,14 +13,6 @@
 
 #include "GSUART.hpp"
 
-#define RAMKA_META_SIZE     4
-#define RAMKA_START         0xCC    // 11001100   204(10) S: 172(10)
-#define RAMKA_STOP          0x33    // 00110011   51(10)  S: 19(10)
-#define RAMKA_SPECIAL       0xF0    // 11110000   240(10) S: 208(10)
-#define RAMKA_SPECIAL_DIF   0x20    // 00100000   32(10)
-#define RAMKA_TENSO         0x01
-#define RAMKA_TEMPERATURE   0x02
-
 class ArduinoWyrzutnia
 {
 public:
@@ -47,7 +39,7 @@ public:
         }
     };
 
-    ArduinoWyrzutnia(std::function<void()> newTensoCallback, std::function<void()> newSensorsCallback, std::string serialPort);
+    ArduinoWyrzutnia(std::string serialPort, std::function<void()> newTensoCallback, std::function<void()> newTemperatureCallback, std::function<void()> newUARTStatsCallback);
     ~ArduinoWyrzutnia();
 
     tenso& getTensoL();
@@ -55,7 +47,8 @@ public:
     const float& getLeanAngle();
     const float& getTemperature();
 
-    const GSUART::UARTStatistics& getUartStats();
+    const GSUART::UARTStatistics::Stats& getUartStats();
+    const GSUART::UARTStatistics::Stats& getRemoteUartStats();
 
     void tareRocketPoint();
     void tareEmptyRocketPoint();
