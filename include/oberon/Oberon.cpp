@@ -10,7 +10,7 @@ Oberon::Oberon()
     // RPI - always /dev/ttyS0  
     // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyS4", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS4");
     // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
-    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), std::bind(&Oberon::publishUartStats, this));
+    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), std::bind(&Oberon::publishArduinoWyrzutniaRemoteUartStats, this));
     
     powerMonitorPublisher = this->create_publisher<gs_interfaces::msg::Power>("/oberon/power", 5);
     // powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Oberon::powerMonitorCallback, this));

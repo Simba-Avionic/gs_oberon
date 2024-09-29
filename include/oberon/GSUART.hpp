@@ -3,7 +3,7 @@
 #define GSUART_PLATFORM_ARDUINO     0
 #define GSUART_PLATFORM_RPI_UBUNTU  1
 #ifndef GSUART_PLATFORM
-#define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
+#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
 #endif
 #pragma once
 
@@ -85,6 +85,10 @@ namespace GSUART
             float goodMessagesReceivedPerSecRatio = 0.0;
             uint32_t messagesOverwritten = 0;
             uint32_t bufforOverflows = 0;
+
+        private:
+            static constexpr size_t _STRUCT_SIZE = 60U;
+            friend class MsgUartStats;
         } stats;
     private:
         uint32_t lastSecTotalMessagesSent = 0;

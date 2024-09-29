@@ -87,6 +87,8 @@ void Messenger::send(const Message& msg) {
   frame[idx++] = RAMKA_STOP;
 
   writeToSerialPort(frame, idx);
+  uartStats.stats.totalMessagesSent++;
+  uartStats.stats.totalBytesSent += idx;
 }
 
 Message* Messenger::receive() {
@@ -129,10 +131,10 @@ Message* Messenger::receive() {
 }
 
 void Messenger::sendUartStats() {
-  uartStats.calculatePerSecValues();
+    uartStats.calculatePerSecValues();
     MsgUartStats msg;
-  msg.stats = uartStats.stats;
-  send(msg);
+    msg.stats = uartStats.stats;
+    send(msg);
 }
 
 const UARTStatistics& Messenger::getStats() {
@@ -349,12 +351,12 @@ void MsgPressure::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgUartStats::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(UARTStatistics::Stats);
-  memcpy(bytes_out, &stats, sizeof(UARTStatistics::Stats));
+  *size_out = UARTStatistics::Stats::_STRUCT_SIZE;
+  memcpy(bytes_out, &stats, UARTStatistics::Stats::_STRUCT_SIZE);
 }
 
 void MsgUartStats::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(UARTStatistics::Stats)) return;
+  if (bytes_in == nullptr || size_in < UARTStatistics::Stats::_STRUCT_SIZE) return;
   memcpy(&stats, bytes_in, size_in);
 }
 
