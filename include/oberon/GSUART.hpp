@@ -75,8 +75,8 @@ namespace GSUART
             uint32_t totalMessagesSent = 0;
             uint32_t totalMessagesReceived = 0;
             uint32_t goodMessagesReceived = 0;
-            uint64_t totalBytesReceived = 0;
-            uint64_t totalBytesSent = 0;
+            uint32_t totalBytesReceived = 0;
+            uint32_t totalBytesSent = 0;
             uint32_t goodMessagesReceivedPerSec = 0;
             uint32_t messagesRecPerSec = 0;
             uint32_t messagesSentPerSec = 0;
@@ -87,7 +87,7 @@ namespace GSUART
             uint32_t bufforOverflows = 0;
 
         private:
-            static constexpr size_t _STRUCT_SIZE = 60U;
+            static constexpr size_t _STRUCT_SIZE = 52U;
             friend class MsgUartStats;
         } stats;
     private:
