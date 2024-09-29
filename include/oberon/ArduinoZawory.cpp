@@ -22,7 +22,7 @@ void ArduinoZawory::readingLoop()
 {
     while (true)
     {
-        GSUART::Message* msg = nullptr;
+        const GSUART::Message* msg = nullptr;
         while (!msg)
         {
             msg = messenger.receive();
@@ -32,7 +32,7 @@ void ArduinoZawory::readingLoop()
         {
             case GSUART::MsgID::ZAWORY_POZYCJA:
             {
-                GSUART::MsgZaworyPozycja* msgZaworyPos = dynamic_cast<GSUART::MsgZaworyPozycja*>(msg);
+                const GSUART::MsgZaworyPozycja* msgZaworyPos = dynamic_cast<const GSUART::MsgZaworyPozycja*>(msg);
                 zaworyPos.feed_percent = msgZaworyPos->valve_feed;
                 zaworyPos.vent_percent = msgZaworyPos->valve_vent;
                 if (newZaworyPosCallback)
@@ -41,7 +41,7 @@ void ArduinoZawory::readingLoop()
             }
             case GSUART::MsgID::TEMPERATURE:
             {
-                GSUART::MsgTemperature* msgTemperature = dynamic_cast<GSUART::MsgTemperature*>(msg);
+                const GSUART::MsgTemperature* msgTemperature = dynamic_cast<const GSUART::MsgTemperature*>(msg);
                 temperature = msgTemperature->temperature_celsius;
                 if (newTemperatureCallback)
                     newTemperatureCallback();
@@ -49,7 +49,7 @@ void ArduinoZawory::readingLoop()
             }
             case GSUART::MsgID::PRESSURE:
             {
-                GSUART::MsgPressure* msgPressure = dynamic_cast<GSUART::MsgPressure*>(msg);
+                const GSUART::MsgPressure* msgPressure = dynamic_cast<const GSUART::MsgPressure*>(msg);
                 pressure = msgPressure->pressure_bar;
                 if (newPressureCallback)
                     newPressureCallback();
@@ -57,14 +57,14 @@ void ArduinoZawory::readingLoop()
             }
             case GSUART::MsgID::UART_STATS:
             {
-                GSUART::MsgUartStats* msgUARTStats = dynamic_cast<GSUART::MsgUartStats*>(msg);
+                const GSUART::MsgUartStats* msgUARTStats = dynamic_cast<const GSUART::MsgUartStats*>(msg);
                 remoteUartStats = msgUARTStats->stats;
                 if (newUARTStatsCallback)
                     newUARTStatsCallback();
                 break;
             }
             default:
-                printf("Unknown message type\n");
+                // printf("Unknown message type\n");
                 break;
         }
     }
