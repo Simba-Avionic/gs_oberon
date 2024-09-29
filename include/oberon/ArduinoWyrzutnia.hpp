@@ -11,6 +11,11 @@
 #include <vector>
 #include <functional>
 
+// #define GSUART_PLATFORM 0        //    0 - arduino - GSUART_PLATFORM_ARDUINO
+                                    //    1 - rpi ubuntu - GSUART_PLATFORM_RPI_UBUNTU
+#define GSUART_PLATFORM_ARDUINO     0
+#define GSUART_PLATFORM_RPI_UBUNTU  1
+#define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
 #include "GSUART.hpp"
 
 class ArduinoWyrzutnia

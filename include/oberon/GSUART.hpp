@@ -1,9 +1,23 @@
+// #define GSUART_PLATFORM 0      //    0 - arduino - GSUART_PLATFORM_ARDUINO
+                                //    1 - rpi ubuntu - GSUART_PLATFORM_RPI_UBUNTU
+#define GSUART_PLATFORM_ARDUINO     0
+#define GSUART_PLATFORM_RPI_UBUNTU  1
+#ifndef GSUART_PLATFORM
+#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
+#endif
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include <string>
-#include <chrono>
+#if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
+    #include <cstdint>
+    #include <vector>
+    #include <string>
+    #include <chrono>
+#endif
+
+#if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
+    #include "HardwareSerial.h"
+    #include "stddef.h"
+#endif
 
 namespace GSUART
 {
@@ -88,18 +102,28 @@ namespace GSUART
     class Messenger
     {
     public:
-        Messenger(std::string uart_device);
-        // ARDUINO VERSION
-        // Messenger(Serial& serial);
+        #if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
+            Messenger(std::string uart_device);
+        #endif
+        #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
+            Messenger(HardwareSerial* serialPort);
+        #endif
         ~Messenger();
 
         void send(const Message& msg);
         Message* receive();
 
+        void sendUartStats();
+
         const UARTStatistics& getStats();
     private:
-        std::string serialPort;
-        int serialPortFD;
+        #if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
+            std::string serialPort;
+            int serialPortFD;
+        #endif
+        #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
+            HardwareSerial* serialPort;
+        #endif
 
         Byte receive_buff[READ_BUFF_SIZE];
         size_t receive_buff_idx = 0;
@@ -110,7 +134,7 @@ namespace GSUART
         void decodeMsg(Byte* msg_bytes, const size_t size);
         void openSerialPort();
         void writeToSerialPort(const Byte* bytes, const size_t size);
-        ssize_t readFromSerialPort(Byte* bytes, const size_t size);
+        int readFromSerialPort(Byte* bytes, const size_t size);
     };
 
 
@@ -118,8 +142,8 @@ namespace GSUART
     {
     public:
         MsgTenso() : Message(MsgID::TENSO) {}
-        int tenso_left_raw = 0;
-        int tenso_right_raw = 0;
+        int32_t tenso_left_raw = 0;
+        int32_t tenso_right_raw = 0;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
@@ -139,8 +163,8 @@ namespace GSUART
     {
     public:
         MsgZaworySterowanie() : Message(MsgID::ZAWORY_STEROWANIE) {}
-        signed char valve_vent = 0;
-        signed char valve_feed = 0;
+        int8_t valve_vent = 0;
+        int8_t valve_feed = 0;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
@@ -150,8 +174,8 @@ namespace GSUART
     {
     public:
         MsgZaworyPozycja() : Message(MsgID::ZAWORY_POZYCJA) {}
-        signed char valve_vent = 0;
-        signed char valve_feed = 0;
+        int8_t valve_vent = 0;
+        int8_t valve_feed = 0;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
