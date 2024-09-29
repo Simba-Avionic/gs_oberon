@@ -7,12 +7,15 @@ Oberon::Oberon()
     loadCellsParamsPublisher = this->create_publisher<gs_interfaces::msg::LoadCellsParams>("/oberon/launch_tower/tenso_params", 3);
     temperatureLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/launch_tower/temperature", 3);
     loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Oberon::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
-    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS0");        // RPI - always /dev/ttyS0  
-    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>(std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyUSB0");   // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
+    // RPI - always /dev/ttyS0  
+    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyS4", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS4");
+    // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
+    arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), std::bind(&Oberon::publishArduinoWyrzutniaRemoteUartStats, this));
     
     powerMonitorPublisher = this->create_publisher<gs_interfaces::msg::Power>("/oberon/power", 5);
-    powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Oberon::powerMonitorCallback, this));
-    wyrzutniaUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 10);
+    // powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Oberon::powerMonitorCallback, this));
+    uartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 3);
+    remoteUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/remote_uart_stats", 3);
     oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::oneSecondTimerCallback, this));
 
     createLiveConfigIfDoesNotExist();
@@ -40,7 +43,7 @@ void Oberon::powerMonitorCallback()
 
 void Oberon::oneSecondTimerCallback()
 {
-    publishWyrzutniaUartStats();
+    publishUartStats();
     publishLoadCellsParams();
 }
 
@@ -78,25 +81,48 @@ void Oberon::arduinoWyrzutniaTemperatureCallback()
     temperatureLaunchPadPublisher->publish(msg);
 }
 
-void Oberon::publishWyrzutniaUartStats()
+void Oberon::publishUartStats()
 {
-    arduinoWyrzutnia->secondPassedUpdateStats();
     gs_interfaces::msg::UartStatistics msg;
     msg.header.stamp = this->now();
     msg.header.frame_id = this->get_fully_qualified_name();
-    auto stats = arduinoWyrzutnia->getUartStats();
-    msg.total_messages_received = stats.totalMessagesReceived;
-    msg.total_messages_sent = stats.totalMessagesSent;
-    msg.good_messages_received = stats.goodMessagesReceived;
-    msg.total_bytes_received = stats.totalBytesReceived;
+    const GSUART::UARTStatistics::Stats& stats = arduinoWyrzutnia->getUartStats();
     msg.total_bytes_sent = stats.totalBytesSent;
-    msg.messages_received_per_second = stats.messagesRecLastSec;
-    msg.messages_sent_per_second = stats.messagesSentLastSec;
-    msg.bytes_received_per_second = stats.bytesRecLastSec;
-    msg.bytes_sent_per_second = stats.bytesSentLastSec;
-    msg.good_messages_received_per_second = stats.goodMessagesReceivedLastSec;
+    msg.total_bytes_received = stats.totalBytesReceived;
+    msg.total_messages_sent = stats.totalMessagesSent;
+    msg.total_messages_received = stats.totalMessagesReceived;
+    msg.good_messages_received = stats.goodMessagesReceived;
+    msg.good_messages_received_per_second = stats.goodMessagesReceivedPerSec;
+    msg.messages_sent_per_second = stats.messagesSentPerSec;
+    msg.messages_received_per_second = stats.messagesRecPerSec;
+    msg.bytes_sent_per_second = stats.bytesSentPerSec;
+    msg.bytes_received_per_second = stats.bytesRecPerSec;
     msg.good_messages_ratio_received_per_second = stats.goodMessagesReceivedPerSecRatio;
-    wyrzutniaUartStatsPub->publish(msg);
+    msg.messages_overwritten = stats.messagesOverwritten;
+    msg.buffor_overflows = stats.bufforOverflows;
+    uartStatsPub->publish(msg);
+}
+
+void Oberon::publishArduinoWyrzutniaRemoteUartStats()
+{
+    gs_interfaces::msg::UartStatistics msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
+    const GSUART::UARTStatistics::Stats& stats = arduinoWyrzutnia->getRemoteUartStats();
+    msg.total_bytes_sent = stats.totalBytesSent;
+    msg.total_bytes_received = stats.totalBytesReceived;
+    msg.total_messages_sent = stats.totalMessagesSent;
+    msg.total_messages_received = stats.totalMessagesReceived;
+    msg.good_messages_received = stats.goodMessagesReceived;
+    msg.good_messages_received_per_second = stats.goodMessagesReceivedPerSec;
+    msg.messages_sent_per_second = stats.messagesSentPerSec;
+    msg.messages_received_per_second = stats.messagesRecPerSec;
+    msg.bytes_sent_per_second = stats.bytesSentPerSec;
+    msg.bytes_received_per_second = stats.bytesRecPerSec;
+    msg.good_messages_ratio_received_per_second = stats.goodMessagesReceivedPerSecRatio;
+    msg.messages_overwritten = stats.messagesOverwritten;
+    msg.buffor_overflows = stats.bufforOverflows;
+    remoteUartStatsPub->publish(msg);
 }
 
 void Oberon::publishLoadCellsParams()

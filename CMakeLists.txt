@@ -7,7 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(gs_interfaces REQUIRED 0.2.0)
+find_package(gs_interfaces REQUIRED 0.3.0)
 
 include_directories(include/oberon)
 
@@ -16,6 +16,7 @@ set(SOURCES
   include/oberon/Oberon.cpp
   include/oberon/ArduinoWyrzutnia.cpp
   include/oberon/PowerMonitor.cpp
+  include/oberon/GSUART.cpp
 )
 
 add_executable(oberon ${SOURCES})
