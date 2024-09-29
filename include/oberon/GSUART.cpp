@@ -288,15 +288,15 @@ int Messenger::readFromSerialPort(Byte* bytes, const size_t size) {
 
 void MsgTenso::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(int) * 2;
-  memcpy(bytes_out, &tenso_left_raw, sizeof(int));
-  memcpy(bytes_out + sizeof(int), &tenso_right_raw, sizeof(int));
+  *size_out = sizeof(int32_t) * 2;
+  memcpy(bytes_out, &tenso_left_raw, sizeof(int32_t));
+  memcpy(bytes_out + sizeof(int32_t), &tenso_right_raw, sizeof(int32_t));
 }
 
 void MsgTenso::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(int) * 2) return;
+  if (bytes_in == nullptr || size_in < sizeof(int32_t) * 2) return;
   memcpy(&tenso_left_raw, bytes_in, size_in);
-  memcpy(&tenso_right_raw, bytes_in + size_in, size_in);
+  memcpy(&tenso_right_raw, bytes_in + sizeof(int32_t), size_in);
 }
 
 void MsgTemperature::serialize(Byte* bytes_out, size_t* size_out) const {
@@ -312,28 +312,28 @@ void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(signed char) * 2;
+  *size_out = sizeof(int8_t) * 2;
   memcpy(bytes_out, &valve_vent, sizeof(signed char));
   memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(signed char) * 2) return;
+  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
   memcpy(&valve_vent, bytes_in, size_in);
-  memcpy(&valve_feed, bytes_in + size_in, size_in);
+  memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
 }
 
 void MsgZaworyPozycja::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(signed char) * 2;
+  *size_out = sizeof(int8_t) * 2;
   memcpy(bytes_out, &valve_vent, sizeof(signed char));
   memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
 }
 
 void MsgZaworyPozycja::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(signed char) * 2) return;
+  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
   memcpy(&valve_vent, bytes_in, size_in);
-  memcpy(&valve_feed, bytes_in + size_in, size_in);
+  memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
 }
 
 void MsgPressure::serialize(Byte* bytes_out, size_t* size_out) const {
