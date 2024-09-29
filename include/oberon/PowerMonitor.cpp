@@ -129,7 +129,7 @@ uint16_t PowerMonitor::readInaRegUnsigned(uint8_t reg)
 
 void PowerMonitor::writeInaReg(uint8_t reg, uint16_t value)
 {
-    uint8_t buf[3] = {reg, (value >> 8), value & 0xff};
+    uint8_t buf[3] = {reg, (uint8_t)(value >> 8), (uint8_t)(value & 0xff)};
     writeReg(buf, sizeof(buf));
 }
 
