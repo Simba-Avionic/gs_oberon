@@ -12,6 +12,7 @@
 #include "gs_interfaces/msg/power.hpp"
 #include "gs_interfaces/msg/valve_servos.hpp"
 #include "gs_interfaces/msg/pressure.hpp"
+#include "gs_interfaces/msg/tanking_control.hpp"
 
 #include "ArduinoWyrzutnia.hpp"
 #include "ArduinoZawory.hpp"
@@ -35,6 +36,7 @@ private:
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr uartStatsZaworyPub;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr remoteUartStatsZaworyPub;
     rclcpp::Subscription<gs_interfaces::msg::LoadCellsTare>::SharedPtr loadCellsLaunchPadTareSubscription;
+    rclcpp::Subscription<gs_interfaces::msg::TankingControl>::SharedPtr tankingControlSubscription;
     
     void arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg);
 
@@ -58,6 +60,7 @@ private:
     void publishArduinoZaworyZaworyPos();
     void publishArduinoZaworyTemperature();
     void publishArduinoZaworyPressure();
+    void fuelingControlCallback(const gs_interfaces::msg::TankingControl::SharedPtr msg);
 
     void createLiveConfigIfDoesNotExist();
     void loadLiveConfig();

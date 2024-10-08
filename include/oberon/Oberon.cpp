@@ -16,7 +16,9 @@ Oberon::Oberon()
     temperatureZaworyPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/fueling/temperature", 3);
     pressureZaworyPublisher = this->create_publisher<gs_interfaces::msg::Pressure>("/oberon/fueling/pressure", 3);
     uartStatsZaworyPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/fueling/uart_stats", 3);
-    remoteUartStatsZaworyPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/fueling/remote_uart_stats", 3);    
+    remoteUartStatsZaworyPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/fueling/remote_uart_stats", 3);
+
+    tankingControlSubscription = this->create_subscription<gs_interfaces::msg::TankingControl>("/oberon/fueling/control", 3, std::bind(&Oberon::fuelingControlCallback, this, std::placeholders::_1));
 
     oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::oneSecondTimerCallback, this));
 
@@ -27,10 +29,10 @@ Oberon::Oberon()
     // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this),
     //                                                                       std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this),
     //                                                                       std::bind(&Oberon::publishArduinoWyrzutniaRemoteUartStats, this));
-    arduinoZawory = std::make_unique<ArduinoZawory>("/dev/ttyUSB0", std::bind(&Oberon::publishArduinoZaworyZaworyPos, this),
-                                                                    std::bind(&Oberon::publishArduinoZaworyTemperature, this),
-                                                                    std::bind(&Oberon::publishArduinoZaworyPressure, this),
-                                                                    std::bind(&Oberon::publishArduinoZaworyRemoteUartStats, this));
+    // arduinoZawory = std::make_unique<ArduinoZawory>("/dev/ttyUSB0", std::bind(&Oberon::publishArduinoZaworyZaworyPos, this),
+    //                                                                 std::bind(&Oberon::publishArduinoZaworyTemperature, this),
+    //                                                                 std::bind(&Oberon::publishArduinoZaworyPressure, this),
+    //                                                                 std::bind(&Oberon::publishArduinoZaworyRemoteUartStats, this));
     createLiveConfigIfDoesNotExist();
     // loadLiveConfig();
 }
@@ -115,24 +117,24 @@ void Oberon::publishUartStats()
     // msg.buffor_overflows = stats.bufforOverflows;
     // uartStatsPub->publish(msg);
 
-    gs_interfaces::msg::UartStatistics msgZawory;
-    msgZawory.header.stamp = this->now();
-    msgZawory.header.frame_id = this->get_fully_qualified_name();
-    const GSUART::UARTStatistics::Stats& statsZawory = arduinoZawory->getUartStats();
-    msgZawory.total_bytes_sent = statsZawory.totalBytesSent;
-    msgZawory.total_bytes_received = statsZawory.totalBytesReceived;
-    msgZawory.total_messages_sent = statsZawory.totalMessagesSent;
-    msgZawory.total_messages_received = statsZawory.totalMessagesReceived;
-    msgZawory.good_messages_received = statsZawory.goodMessagesReceived;
-    msgZawory.good_messages_received_per_second = statsZawory.goodMessagesReceivedPerSec;
-    msgZawory.messages_sent_per_second = statsZawory.messagesSentPerSec;
-    msgZawory.messages_received_per_second = statsZawory.messagesRecPerSec;
-    msgZawory.bytes_sent_per_second = statsZawory.bytesSentPerSec;
-    msgZawory.bytes_received_per_second = statsZawory.bytesRecPerSec;
-    msgZawory.good_messages_ratio_received_per_second = statsZawory.goodMessagesReceivedPerSecRatio;
-    msgZawory.messages_overwritten = statsZawory.messagesOverwritten;
-    msgZawory.buffor_overflows = statsZawory.bufforOverflows;
-    uartStatsZaworyPub->publish(msgZawory);
+    // gs_interfaces::msg::UartStatistics msgZawory;
+    // msgZawory.header.stamp = this->now();
+    // msgZawory.header.frame_id = this->get_fully_qualified_name();
+    // const GSUART::UARTStatistics::Stats& statsZawory = arduinoZawory->getUartStats();
+    // msgZawory.total_bytes_sent = statsZawory.totalBytesSent;
+    // msgZawory.total_bytes_received = statsZawory.totalBytesReceived;
+    // msgZawory.total_messages_sent = statsZawory.totalMessagesSent;
+    // msgZawory.total_messages_received = statsZawory.totalMessagesReceived;
+    // msgZawory.good_messages_received = statsZawory.goodMessagesReceived;
+    // msgZawory.good_messages_received_per_second = statsZawory.goodMessagesReceivedPerSec;
+    // msgZawory.messages_sent_per_second = statsZawory.messagesSentPerSec;
+    // msgZawory.messages_received_per_second = statsZawory.messagesRecPerSec;
+    // msgZawory.bytes_sent_per_second = statsZawory.bytesSentPerSec;
+    // msgZawory.bytes_received_per_second = statsZawory.bytesRecPerSec;
+    // msgZawory.good_messages_ratio_received_per_second = statsZawory.goodMessagesReceivedPerSecRatio;
+    // msgZawory.messages_overwritten = statsZawory.messagesOverwritten;
+    // msgZawory.buffor_overflows = statsZawory.bufforOverflows;
+    // uartStatsZaworyPub->publish(msgZawory);
 }
 
 void Oberon::publishArduinoWyrzutniaRemoteUartStats()
@@ -297,4 +299,13 @@ void Oberon::publishArduinoZaworyRemoteUartStats()
     msg.messages_overwritten = stats.messagesOverwritten;
     msg.buffor_overflows = stats.bufforOverflows;
     remoteUartStatsZaworyPub->publish(msg);
+}
+
+void Oberon::fuelingControlCallback(const gs_interfaces::msg::TankingControl::SharedPtr msg)
+{
+    RCLCPP_INFO(this->get_logger(), "Fueling control msg from %s  %d  %d  %d", msg->header.frame_id.c_str(), msg->valve_feed, msg->valve_vent, msg->decouple);
+    if (arduinoZawory)
+        arduinoZawory->steerFueling(msg->valve_feed, msg->valve_vent, msg->decouple);
+    else
+        printf("arduinoZawory is nullptr\n");
 }
