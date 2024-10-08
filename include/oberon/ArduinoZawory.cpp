@@ -70,11 +70,12 @@ void ArduinoZawory::readingLoop()
     }
 }
 
-void ArduinoZawory::openZawory(int8_t feed_percent, int8_t vent_percent)
+void ArduinoZawory::steerFueling(int8_t feed_percent, int8_t vent_percent, bool decouple)
 {
     GSUART::MsgZaworySterowanie msg;
     msg.valve_feed = feed_percent;
     msg.valve_vent = vent_percent;
+    msg.decouple = decouple;
     messenger.send(msg);
 }
 

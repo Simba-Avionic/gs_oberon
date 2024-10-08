@@ -171,6 +171,7 @@ namespace GSUART
         MsgZaworySterowanie() : Message(MsgID::ZAWORY_STEROWANIE) {}
         int8_t valve_vent = 0;
         int8_t valve_feed = 0;
+        bool decouple = false;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;

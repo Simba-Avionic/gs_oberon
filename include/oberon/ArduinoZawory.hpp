@@ -21,7 +21,7 @@ public:
                                           std::function<void()> newUARTStatsCallback);
     ~ArduinoZawory();
 
-    void openZawory(int8_t feed_percent, int8_t vent_percent);
+    void steerFueling(int8_t feed_percent, int8_t vent_percent, bool decouple);
 
     const ZaworyPos& getZaworyPos();
     const float& getTemperature();

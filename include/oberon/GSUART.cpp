@@ -324,22 +324,24 @@ void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(int8_t) * 2;
-  memcpy(bytes_out, &valve_vent, sizeof(signed char));
-  memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
+  *size_out = sizeof(int8_t) * 2 + sizeof(bool);
+  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t) * 2, &decouple, sizeof(bool));
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
   memcpy(&valve_vent, bytes_in, size_in);
   memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
+  memcpy(&decouple, bytes_in + sizeof(int8_t) * 2, size_in);
 }
 
 void MsgZaworyPozycja::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
   *size_out = sizeof(int8_t) * 2;
-  memcpy(bytes_out, &valve_vent, sizeof(signed char));
-  memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
+  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
 }
 
 void MsgZaworyPozycja::deserialize(const Byte* bytes_in, const size_t size_in) {
