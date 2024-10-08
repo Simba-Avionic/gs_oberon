@@ -18,7 +18,7 @@ void ArduinoWyrzutnia::readingLoop()
 {
     while (true)
     {
-        GSUART::Message* msg = nullptr;
+        const GSUART::Message* msg = nullptr;
         while (!msg)
         {
             msg = messenger.receive();
@@ -28,7 +28,7 @@ void ArduinoWyrzutnia::readingLoop()
         {
             case GSUART::MsgID::TENSO:
             {
-                GSUART::MsgTenso* msgTenso = dynamic_cast<GSUART::MsgTenso*>(msg);
+                const GSUART::MsgTenso* msgTenso = dynamic_cast<const GSUART::MsgTenso*>(msg);
                 tensoL.raw_value = msgTenso->tenso_left_raw;
                 tensoL.last_values[(tensoL.last_values_idx++) % 30] = tensoL.raw_value;
                 tensoR.raw_value = msgTenso->tenso_right_raw;
@@ -56,7 +56,7 @@ void ArduinoWyrzutnia::readingLoop()
             }
             case GSUART::MsgID::TEMPERATURE:
             {
-                GSUART::MsgTemperature* msgTemperature = dynamic_cast<GSUART::MsgTemperature*>(msg);
+                const GSUART::MsgTemperature* msgTemperature = dynamic_cast<const GSUART::MsgTemperature*>(msg);
                 temperature = msgTemperature->temperature_celsius;
                 if (newTemperatureCallback)
                     newTemperatureCallback();
@@ -64,14 +64,14 @@ void ArduinoWyrzutnia::readingLoop()
             }
             case GSUART::MsgID::UART_STATS:
             {
-                GSUART::MsgUartStats* msgUARTStats = dynamic_cast<GSUART::MsgUartStats*>(msg);
+                const GSUART::MsgUartStats* msgUARTStats = dynamic_cast<const GSUART::MsgUartStats*>(msg);
                 remoteUARTStats = msgUARTStats->stats;
                 if (newUARTStatsCallback)
                     newUARTStatsCallback();
                 break;
             }
             default:
-                printf("Unknown message type\n");
+                // printf("Unknown message type\n");
                 break;
         }
     }

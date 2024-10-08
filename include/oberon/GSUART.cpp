@@ -91,11 +91,11 @@ void Messenger::send(const Message& msg) {
   uartStats.stats.totalBytesSent += idx;
 }
 
-Message* Messenger::receive() {
-#if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
-  if (serialPort->available() <= 0)
-    return nullptr;
-#endif
+const Message* Messenger::receive() {
+  #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
+    if (serialPort->available() <= 0)
+      return nullptr;
+  #endif
 
   if (receivedMsg) {
     delete receivedMsg;
@@ -103,9 +103,11 @@ Message* Messenger::receive() {
   }
 
   // gdyby brakowalo RAMU na arduino to ten buffor mozna zmniejszyc
-  Byte read_buff[READ_BUFF_SIZE];
-
-  int n = readFromSerialPort(read_buff, READ_BUFF_SIZE);
+  Byte read_buff[READ_BUFF_SIZE*2];
+  if (extra_buff_data_size > 0) // jesli cos zostalo z poprzedniego odczytu
+    memcpy(read_buff, extra_buff, extra_buff_data_size);
+  int n = readFromSerialPort(read_buff+extra_buff_data_size, READ_BUFF_SIZE);
+  extra_buff_data_size = 0;
 
   uartStats.stats.totalBytesReceived += n;
   for (int i = 0; i < n; i++) {
@@ -125,6 +127,10 @@ Message* Messenger::receive() {
     } else if (b == RAMKA_STOP) {
       decodeMsg(receive_buff, receive_buff_idx);
       receive_buff_idx = 0;
+
+      extra_buff_data_size = n-i-1;
+      memcpy(extra_buff, read_buff+i+1, extra_buff_data_size);
+      break;
     }
   }
   return receivedMsg;
@@ -177,6 +183,7 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
   if (receivedMsg) {
     uartStats.stats.messagesOverwritten++;
     delete receivedMsg;
+    receivedMsg = nullptr;
   }
 
   MsgID msgID = (MsgID)msg_bytes[0];
@@ -199,6 +206,9 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::UART_STATS:
       receivedMsg = new MsgUartStats();
       break;
+    default:
+      receivedMsg = nullptr;
+      return;
   }
   receivedMsg->deserialize(msg_bytes + 1, conv_idx - 2);
 }
@@ -314,22 +324,24 @@ void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(int8_t) * 2;
-  memcpy(bytes_out, &valve_vent, sizeof(signed char));
-  memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
+  *size_out = sizeof(int8_t) * 2 + sizeof(bool);
+  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t) * 2, &decouple, sizeof(bool));
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
   memcpy(&valve_vent, bytes_in, size_in);
   memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
+  memcpy(&decouple, bytes_in + sizeof(int8_t) * 2, size_in);
 }
 
 void MsgZaworyPozycja::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
   *size_out = sizeof(int8_t) * 2;
-  memcpy(bytes_out, &valve_vent, sizeof(signed char));
-  memcpy(bytes_out + sizeof(int), &valve_feed, sizeof(signed char));
+  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
 }
 
 void MsgZaworyPozycja::deserialize(const Byte* bytes_in, const size_t size_in) {

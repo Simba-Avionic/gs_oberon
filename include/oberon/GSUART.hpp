@@ -115,7 +115,7 @@ namespace GSUART
         ~Messenger();
 
         void send(const Message& msg);
-        Message* receive();
+        const Message* receive();
 
         void sendUartStats();
 
@@ -129,8 +129,10 @@ namespace GSUART
             HardwareSerial* serialPort;
         #endif
 
-        Byte receive_buff[READ_BUFF_SIZE];
+        Byte receive_buff[RECEIVE_BUFF_SIZE];
         size_t receive_buff_idx = 0;
+        Byte extra_buff[READ_BUFF_SIZE];
+        size_t extra_buff_data_size = 0;
         Message* receivedMsg = nullptr;
 
         UARTStatistics uartStats;
@@ -169,6 +171,7 @@ namespace GSUART
         MsgZaworySterowanie() : Message(MsgID::ZAWORY_STEROWANIE) {}
         int8_t valve_vent = 0;
         int8_t valve_feed = 0;
+        bool decouple = false;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
