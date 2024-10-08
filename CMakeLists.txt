@@ -7,7 +7,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(gs_interfaces REQUIRED 0.3.1)
+find_package(gs_interfaces 0.4.0 REQUIRED)
 
 include_directories(include/oberon)
 
