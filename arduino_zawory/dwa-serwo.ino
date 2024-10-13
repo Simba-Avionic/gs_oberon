@@ -29,7 +29,8 @@ if (millis() >= uart_stats_read_time)
     uart_stats_read_time = millis() + SEND_INTERVAL_UART_STATS;
     sendUartStats();
   } 
-readServoCtrl();
+if (Serial.available())
+  readServoCtrl();
 if (tic - last_update >= RESET_TIME){
   pos_vent = 0;
   pos_feed = 0;
