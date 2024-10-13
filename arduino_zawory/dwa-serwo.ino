@@ -8,7 +8,7 @@ GSUART::Messenger messenger(&Serial);
 #define FEED_PIN 9
 #define VENT_PIN 10
 #define RESET_TIME 5000
-
+void readServoCtrl();
 void sendUartStats();
 Servo serwo_vent;
 Servo serwo_feed;
