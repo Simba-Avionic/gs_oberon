@@ -93,8 +93,10 @@ void Messenger::send(const Message& msg) {
 
 const Message* Messenger::receive() {
   #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
+  
     if (serialPort->available() <= 0)
       return nullptr;
+
   #endif
 
   if (receivedMsg) {
@@ -106,11 +108,13 @@ const Message* Messenger::receive() {
   Byte read_buff[READ_BUFF_SIZE*2];
   if (extra_buff_data_size > 0) // jesli cos zostalo z poprzedniego odczytu
     memcpy(read_buff, extra_buff, extra_buff_data_size);
+
   int n = readFromSerialPort(read_buff+extra_buff_data_size, READ_BUFF_SIZE);
+  size_t extra_buff_size_copy = extra_buff_data_size;
   extra_buff_data_size = 0;
 
   uartStats.stats.totalBytesReceived += n;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n+extra_buff_size_copy; i++) {
     Byte b = read_buff[i];
     receive_buff[receive_buff_idx++] = b;
 
@@ -155,7 +159,8 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     return;
 
   uartStats.stats.totalMessagesReceived++;
-  // remove special values, in place algorithm :O <- zamiast przepisywac do nowego bufora mozna przenosic w tym samym buforze
+
+   // remove special values, in place algorithm :O <- zamiast przepisywac do nowego bufora mozna przenosic w tym samym buforze
   size_t conv_idx = 0;
   for (size_t i = 1; i < size - 1; i++)  // bez bajt start i stop
   {
@@ -210,6 +215,7 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
       receivedMsg = nullptr;
       return;
   }
+
   receivedMsg->deserialize(msg_bytes + 1, conv_idx - 2);
 }
 
@@ -274,9 +280,9 @@ void Messenger::writeToSerialPort(const Byte* bytes, const size_t size) {
 #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
   int res = serialPort->write(bytes, size);
   if (res != static_cast<int>(size)) {
-    printf("Error writing to serial port: %d\n", errno);
+    // printf("Error writing to serial port: %d\n", errno);
   } else {
-    printf("Successfully wrote %ld bytes to serial port.\n", res);
+    // printf("Successfully wrote %ld bytes to serial port.\n", res);
   }
 #endif
 }
@@ -292,7 +298,8 @@ int Messenger::readFromSerialPort(Byte* bytes, const size_t size) {
 #endif
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
-  int bytesRead = serialPort->readBytes(bytes, size);
+  int min_size = serialPort->available() > size ? size : serialPort->available();
+  int bytesRead = serialPort->readBytes(bytes, min_size);
   return bytesRead;
 #endif
 }
@@ -331,7 +338,7 @@ void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
+  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2 + sizeof(bool)) return;
   memcpy(&valve_vent, bytes_in, size_in);
   memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
   memcpy(&decouple, bytes_in + sizeof(int8_t) * 2, size_in);
